@@ -1,0 +1,15 @@
+{
+    "archive": ["zip", "tgz", "tar", "gz", "rar", "xz", "bz2", "lzma", "7z", "cab"],
+    "image": ["jpg", "jpeg", "png", "gif", "bmp", "tif", "tiff"],
+    "video": ["mp4", "avi", "mov", "mkv", "wmv", "flv", "webm"],
+    "audio": ["mp3", "wav", "flac", "aac", "wma", "ogg"],
+    "document": ["doc", "docx", "pdf", "txt", "rtf", "odt"],
+    "spreadsheet": ["xls", "xlsx", "csv", "ods"],
+    "presentation": ["ppt", "pptx", "key", "odp"],
+    "executable": ["exe", "app", "msi", "bat", "sh"],
+    "code": ["py", "java", "cpp", "html", "css", "js", "php"],
+    "database": ["db", "sqlite", "json", "csv", "sql"],
+    "font": ["ttf", "otf", "woff", "eot"],
+    "backup": ["bak", "old", "tmp"],
+    "presentation": ["ppt", "pptx"]
+}
