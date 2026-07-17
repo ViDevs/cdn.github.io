@@ -25,6 +25,7 @@
     const root = document.getElementById('root') || document.body;
     observer.observe(root, { childList: true, subtree: true });
 })();
+
 (function () {
   const STORAGE_KEY = 'disclaimer_accepted_v1';
   if (localStorage.getItem(STORAGE_KEY)) return;
@@ -56,45 +57,13 @@
     setTimeout(() => banner.remove(), 320);
   });
 })();
-function initDonateModal() {
-    if (document.getElementById('donate-modal')) return;    
-    const modal = document.createElement('div');
-    modal.id = 'donate-modal';
-    modal.className = 'donate-overlay';
-    modal.onclick = function(e) {
-        if (e.target === this) this.classList.remove('active');
-    };    
-    modal.innerHTML = `
-      <div class="donate-modal">
-        <span class="donate-close" onclick="document.getElementById('donate-modal').classList.remove('active')">&times;</span>
-        <div class="donate-title">☕ Ủng hộ Dự án</div>
-        <div class="donate-desc">
-          Hệ thống được vận hành và lưu trữ bằng kinh phí cá nhân. Nếu bạn thấy trang web hữu ích, hãy ủng hộ admin một ly cà phê để có thêm động lực duy trì và phát triển dự án nhé! ❤️
-        </div>
-        <div class="qr-wrapper">
-          <div class="qr-box">
-            <img src="https://cdn.cloudily.org/img/momo-qr.png" alt="MoMo">
-            <span class="qr-name" style="color: #A50064;">MoMo</span>
-          </div>
-          <div class="qr-box">
-            <img src="https://cdn.cloudily.org/img/vtpay-qr.png" alt="Viettel Money">
-            <span class="qr-name" style="color: #EE0033;">Viettel Money</span>
-          </div>
-          <div class="qr-box">
-            <img src="https://cdn.cloudily.org/img/mb-qr.png" alt="MB Bank">
-            <span class="qr-name" style="color: #123281;">MB Bank</span>
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-}
+
 function fixFooter() {
-    initDonateModal();    
     const footer = document.querySelector('.footer');
     if (!footer || footer.dataset.customized === 'true') return;    
     footer.innerHTML = '';
     footer.dataset.customized = 'true';    
+    
     const copyright = document.createElement('a');
     copyright.href = '/';
     copyright.textContent = '© 2026. Cloudily';
@@ -103,31 +72,21 @@ function fixFooter() {
     copyright.style.whiteSpace = 'nowrap';
     copyright.onmouseover = () => copyright.style.textDecoration = 'underline';
     copyright.onmouseout  = () => copyright.style.textDecoration = 'none';    
-    const donate = document.createElement('a');
-    donate.href = 'javascript:void(0)';
-    donate.textContent = '💖 Donate';
-    donate.style.color = '#ff4d4f';
-    donate.style.fontWeight = 'bold';
-    donate.style.textDecoration = 'none';
-    donate.style.whiteSpace = 'nowrap';
-    donate.onclick = (e) => {
-        e.preventDefault();
-        const modal = document.getElementById('donate-modal');
-        if (modal) modal.classList.add('active');
-    };
+    
     const token = localStorage.getItem('token');
     const isLoggedIn = (token && token !== 'undefined' && token !== 'null' && token.length > 0);    
+    
     const authLink = document.createElement('a');
     authLink.href = isLoggedIn ? '/@manage' : '/@login';
     authLink.textContent = isLoggedIn ? 'Manage' : 'Login';
     authLink.style.color = 'inherit';
     authLink.style.textDecoration = 'none';
     authLink.style.whiteSpace = 'nowrap';    
+    
     footer.appendChild(copyright);
     footer.appendChild(document.createTextNode(' | '));
-    footer.appendChild(donate);
-    footer.appendChild(document.createTextNode(' | '));
     footer.appendChild(authLink);    
+    
     footer.style.display = 'flex';
     footer.style.flexDirection = 'row';
     footer.style.alignItems = 'center';
@@ -135,6 +94,7 @@ function fixFooter() {
     footer.style.gap = '10px';
     footer.style.fontSize = '16px';
 }
+
 const appObserver = new MutationObserver(() => {
     const footer = document.querySelector('.footer');
     if (footer && footer.dataset.customized !== 'true') {
