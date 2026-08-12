@@ -1,4 +1,32 @@
 (function() {
+    function renameDashboard() {
+      if (document.title.includes('AList Manage')) {
+        document.title = document.title.replace('AList Manage', 'Dashboard');
+      }
+      const headings = document.querySelectorAll('h2.hope-heading');
+      headings.forEach(heading => {
+        if (heading.textContent.trim() === 'AList Manage') {
+          heading.textContent = 'Dashboard';
+        }
+      });
+    }
+    renameDashboard();
+    const bodyObserver = new MutationObserver(renameDashboard);
+    if (document.body) {
+      bodyObserver.observe(document.body, { childList: true, subtree: true });
+    } else {
+      window.addEventListener('DOMContentLoaded', () => {
+        bodyObserver.observe(document.body, { childList: true, subtree: true });
+      });
+    }
+    const titleElement = document.querySelector('title');
+    if (titleElement) {
+      const titleObserver = new MutationObserver(renameDashboard);
+      titleObserver.observe(titleElement, { childList: true });
+    }
+  })();
+
+(function() {
     function hideSpecificMenus() {
       const links = document.querySelectorAll('a'); 
       links.forEach(link => {
