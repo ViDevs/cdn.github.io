@@ -1,4 +1,25 @@
 (function() {
+    function hideSpecificMenus() {
+      const links = document.querySelectorAll('a'); 
+      links.forEach(link => {
+        const text = link.textContent.trim();
+        if (text === 'About' || text === 'Documentation') {
+          link.style.display = 'none';
+        }
+      });
+    }
+    hideSpecificMenus();
+    const observer = new MutationObserver(hideSpecificMenus);    
+    if (document.body) {
+      observer.observe(document.body, { childList: true, subtree: true });
+    } else {
+      window.addEventListener('DOMContentLoaded', () => {
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+    }
+  })();
+
+(function() {
     function updateSubtitleFontSize(container) {
         const subtitleElement = document.querySelector('.art-subtitle');
         if (!subtitleElement || !container) return;
