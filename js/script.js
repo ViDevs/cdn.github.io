@@ -1,115 +1,77 @@
 (function() {
-    function renameDashboard() {
-      if (document.title.includes('AList Manage')) {
-        document.title = document.title.replace('AList Manage', 'Dashboard');
-      }
-      const headings = document.querySelectorAll('h2.hope-heading');
-      headings.forEach(heading => {
-        if (heading.textContent.trim() === 'AList Manage') {
-          heading.textContent = 'Dashboard';
-        }
-      });
-    }
-    renameDashboard();
-    const bodyObserver = new MutationObserver(renameDashboard);
-    if (document.body) {
-      bodyObserver.observe(document.body, { childList: true, subtree: true });
-    } else {
-      window.addEventListener('DOMContentLoaded', () => {
-        bodyObserver.observe(document.body, { childList: true, subtree: true });
-      });
-    }
-    const titleElement = document.querySelector('title');
-    if (titleElement) {
-      const titleObserver = new MutationObserver(renameDashboard);
-      titleObserver.observe(titleElement, { childList: true });
-    }
-  })();
-
-(function() {
-    function hideSpecificMenus() {
-      const links = document.querySelectorAll('a'); 
-      links.forEach(link => {
-        const text = link.textContent.trim();
-        if (text === 'About' || text === 'Documentation') {
-          link.style.display = 'none';
-        }
-      });
-    }
-    hideSpecificMenus();
-    const observer = new MutationObserver(hideSpecificMenus);    
-    if (document.body) {
-      observer.observe(document.body, { childList: true, subtree: true });
-    } else {
-      window.addEventListener('DOMContentLoaded', () => {
-        observer.observe(document.body, { childList: true, subtree: true });
-      });
-    }
-  })();
-
-(function() {
-    function updateSubtitleFontSize(container) {
-        const subtitleElement = document.querySelector('.art-subtitle');
-        if (!subtitleElement || !container) return;
-        const videoWidth = container.offsetWidth;
-        let fontSize = videoWidth * 0.03;
-        fontSize = Math.max(14, Math.min(fontSize, 45)); 
-        subtitleElement.style.fontSize = fontSize + 'px';
-    }
-    const resizeObserver = new ResizeObserver(entries => {
-        window.requestAnimationFrame(() => {
-            for (let entry of entries) {
-                updateSubtitleFontSize(entry.target);
-            }
-        });
-    });
-    const observer = new MutationObserver(() => {
-        const videoElement = document.querySelector('.art-video') || (document.querySelector('video') ? document.querySelector('video').parentNode : null);
-        if (videoElement && !videoElement.dataset.subtitleObserved) {
-            videoElement.dataset.subtitleObserved = 'true';
-            resizeObserver.observe(videoElement);
-            updateSubtitleFontSize(videoElement);
-        }
-    });
-    const root = document.getElementById('root') || document.body;
-    observer.observe(root, { childList: true, subtree: true });
-})();
-
-(function () {
+  // ==========================================
+  // 1. DISCLAIMER BANNER (Runs once on load)
+  // ==========================================
   const STORAGE_KEY = 'disclaimer_accepted_v1';
-  if (localStorage.getItem(STORAGE_KEY)) return;
-  const banner = document.createElement('div');
-  banner.id = 'site-disclaimer';
-  banner.innerHTML = `
-    <span class="disc-icon">⚠️</span>
-    <div class="disc-body">
-      <div class="disc-title">Tuyên bố miễn trừ trách nhiệm</div>
-      <div class="disc-text">
-        Website này được xây dựng và vận hành <strong>hoàn toàn vì mục đích cá nhân, phi thương mại</strong>,
-        không có bất kỳ hình thức kinh doanh, thu phí hay khai thác thương mại nào.
-        Một số nội dung lưu trữ trên website có thể <span class="disc-highlight">thuộc quyền sở hữu của bên thứ ba</span>.
-        Người quản trị không sở hữu, không phân phối và không kiếm lợi nhuận từ các nội dung đó.
-        Nếu bạn tiếp tục truy cập, sử dụng và chia sẻ, bạn <strong>tự chịu hoàn toàn trách nhiệm pháp lý</strong> về
-        việc sử dụng nội dung theo đúng quy định pháp luật tại quốc gia của bạn.
-        Người quản trị <strong>không chịu bất kỳ trách nhiệm nào</strong> phát sinh từ hành vi sử dụng
-        nội dung của người dùng, bao gồm nhưng không giới hạn ở các vi phạm bản quyền hay pháp luật liên quan.
+  if (!localStorage.getItem(STORAGE_KEY)) {
+    const banner = document.createElement('div');
+    banner.id = 'site-disclaimer';
+    banner.innerHTML = `
+      <span class="disc-icon">⚠️</span>
+      <div class="disc-body">
+        <div class="disc-title">Tuyên bố miễn trừ trách nhiệm</div>
+        <div class="disc-text">
+          Website này được xây dựng và vận hành <strong>hoàn toàn vì mục đích cá nhân, phi thương mại</strong>,
+          không có bất kỳ hình thức kinh doanh, thu phí hay khai thác thương mại nào.
+          Một số nội dung lưu trữ trên website có thể <span class="disc-highlight">thuộc quyền sở hữu của bên thứ ba</span>.
+          Người quản trị không sở hữu, không phân phối và không kiếm lợi nhuận từ các nội dung đó.
+          Nếu bạn tiếp tục truy cập, sử dụng và chia sẻ, bạn <strong>tự chịu hoàn toàn trách nhiệm pháp lý</strong> về
+          việc sử dụng nội dung theo đúng quy định pháp luật tại quốc gia của bạn.
+          Người quản trị <strong>không chịu bất kỳ trách nhiệm nào</strong> phát sinh từ hành vi sử dụng
+          nội dung của người dùng, bao gồm nhưng không giới hạn ở các vi phạm bản quyền hay pháp luật liên quan.
+        </div>
       </div>
-    </div>
-    <button class="disc-btn" id="disc-accept-btn">Đã hiểu & Đồng ý</button>
-  `;
-  document.body.appendChild(banner);
-  document.getElementById('disc-accept-btn').addEventListener('click', function () {
-    localStorage.setItem(STORAGE_KEY, '1');
-    banner.style.transition = 'opacity 0.3s, transform 0.3s';
-    banner.style.opacity = '0';
-    banner.style.transform = 'translateY(100%)';
-    setTimeout(() => banner.remove(), 320);
-  });
-})();
+      <button class="disc-btn" id="disc-accept-btn">Đã hiểu & Đồng ý</button>
+    `;
+    document.body.appendChild(banner);
+    document.getElementById('disc-accept-btn').addEventListener('click', function () {
+      localStorage.setItem(STORAGE_KEY, '1');
+      banner.style.transition = 'opacity 0.3s, transform 0.3s';
+      banner.style.opacity = '0';
+      banner.style.transform = 'translateY(100%)';
+      setTimeout(() => banner.remove(), 320);
+    });
+  }
 
-function fixFooter() {
+  // ==========================================
+  // 2. HELPER FUNCTIONS FOR DOM MUTATIONS
+  // ==========================================
+  
+  function renameDashboard() {
+    if (document.title.includes('AList Manage')) {
+      document.title = document.title.replace('AList Manage', 'Dashboard');
+    }
+    const headings = document.querySelectorAll('h2.hope-heading');
+    headings.forEach(heading => {
+      if (heading.textContent.trim() === 'AList Manage') {
+        heading.textContent = 'Dashboard';
+      }
+    });
+  }
+
+  function hideSpecificMenus() {
+    const links = document.querySelectorAll('a'); 
+    links.forEach(link => {
+      const text = link.textContent.trim();
+      if (text === 'About' || text === 'Documentation') {
+        link.style.display = 'none';
+      }
+    });
+  }
+
+  function updateSubtitleFontSize(container) {
+    const subtitleElement = document.querySelector('.art-subtitle');
+    if (!subtitleElement || !container) return;
+    const videoWidth = container.offsetWidth;
+    let fontSize = videoWidth * 0.03;
+    fontSize = Math.max(14, Math.min(fontSize, 45)); 
+    subtitleElement.style.fontSize = fontSize + 'px';
+  }
+
+  function fixFooter() {
     const footer = document.querySelector('.footer');
     if (!footer || footer.dataset.customized === 'true') return;    
+    
     footer.innerHTML = '';
     footer.dataset.customized = 'true';    
     
@@ -142,13 +104,56 @@ function fixFooter() {
     footer.style.justifyContent = 'center';
     footer.style.gap = '10px';
     footer.style.fontSize = '16px';
-}
+  }
 
-const appObserver = new MutationObserver(() => {
-    const footer = document.querySelector('.footer');
-    if (footer && footer.dataset.customized !== 'true') {
-        fixFooter();
+  // ==========================================
+  // 3. OBSERVERS SET UP
+  // ==========================================
+
+  // ResizeObserver specifically for the video element
+  const resizeObserver = new ResizeObserver(entries => {
+    window.requestAnimationFrame(() => {
+      for (let entry of entries) {
+        updateSubtitleFontSize(entry.target);
+      }
+    });
+  });
+
+  // ONE CENTRALIZED MutationObserver for the entire body
+  const mainAppObserver = new MutationObserver(() => {
+    renameDashboard();
+    hideSpecificMenus();
+    fixFooter();
+
+    // Check for video to apply subtitle resizing
+    const videoElement = document.querySelector('.art-video') || (document.querySelector('video') ? document.querySelector('video').parentNode : null);
+    if (videoElement && !videoElement.dataset.subtitleObserved) {
+      videoElement.dataset.subtitleObserved = 'true';
+      resizeObserver.observe(videoElement);
+      updateSubtitleFontSize(videoElement);
     }
-});
-appObserver.observe(document.body, { childList: true, subtree: true });
-window.addEventListener('load', fixFooter);
+  });
+
+  // Initialize the body observer
+  const initMainObserver = () => {
+    mainAppObserver.observe(document.body, { childList: true, subtree: true });
+    // Run an initial pass
+    renameDashboard();
+    hideSpecificMenus();
+    fixFooter();
+  };
+
+  if (document.body) {
+    initMainObserver();
+  } else {
+    window.addEventListener('DOMContentLoaded', initMainObserver);
+  }
+
+  // Separate observer just for the <title> tag changes
+  const titleElement = document.querySelector('title');
+  if (titleElement) {
+    const titleObserver = new MutationObserver(renameDashboard);
+    titleObserver.observe(titleElement, { childList: true });
+  }
+
+})();
