@@ -59,6 +59,16 @@
     });
   }
 
+  // NEW FUNCTION: Hide the "Overwrite existing files" checkbox
+  function hideOverwriteCheckbox() {
+    const labels = document.querySelectorAll('label.hope-checkbox');
+    labels.forEach(label => {
+      if (label.textContent.includes('Overwrite existing files')) {
+        label.style.display = 'none';
+      }
+    });
+  }
+
   function updateSubtitleFontSize(container) {
     const subtitleElement = document.querySelector('.art-subtitle');
     if (!subtitleElement || !container) return;
@@ -179,6 +189,7 @@
   const mainAppObserver = new MutationObserver(() => {
     renameDashboard();
     hideSpecificMenus();
+    hideOverwriteCheckbox(); // Hide checkbox dynamically
     fixFooter();
 
     // Check for video to apply subtitle resizing
@@ -196,6 +207,7 @@
     // Run an initial pass
     renameDashboard();
     hideSpecificMenus();
+    hideOverwriteCheckbox(); // Hide checkbox initially if present
     fixFooter();
   };
 
