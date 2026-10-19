@@ -35,18 +35,52 @@
   }
 
   // ==========================================
-  // 2. CLIPBOARD INTERCEPTOR (Fix "Copy link")
+  // 2. CLIPBOARD INTERCEPTOR (Bulletproof)
   // ==========================================
-  // Bắt các lệnh copy và đổi link cloudily.org/d/ thành drive.cloudily.org/
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    const originalWriteText = navigator.clipboard.writeText;
-    navigator.clipboard.writeText = function(text) {
-        if (typeof text === 'string' && text.includes('https://cloudily.org/d/')) {
-            text = text.replace('https://cloudily.org/d/', 'https://drive.cloudily.org/');
+  function interceptClipboard() {
+    // 2A. Đánh chặn lệnh copy cũ (document.execCommand) do thư viện copy-to-clipboard sử dụng
+    const originalExecCommand = document.execCommand;
+    document.execCommand = function(command, ui, value) {
+      if (command && command.toLowerCase() === 'copy') {
+        const activeEl = document.activeElement;
+        // Thư viện sẽ tạo thẻ textarea/input ẩn để copy, ta chặn ở đây
+        if (activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT')) {
+          if (activeEl.value && activeEl.value.includes('https://cloudily.org/d/')) {
+            // Thay thế URL gốc bằng URL Proxy
+            activeEl.value = activeEl.value.replace(/https:\/\/cloudily\.org\/d\//g, 'https://drive.cloudily.org/');
+            activeEl.select(); // Bôi đen lại văn bản mới để trình duyệt copy đúng URL
+          }
         }
-        return originalWriteText.call(navigator.clipboard, text);
+      }
+      return originalExecCommand.apply(this, arguments);
     };
+
+    // 2B. Đánh chặn API Clipboard hiện đại (Prototype Hook)
+    if (typeof window.Clipboard !== 'undefined' && Clipboard.prototype && Clipboard.prototype.writeText) {
+      const originalProtoWriteText = Clipboard.prototype.writeText;
+      Clipboard.prototype.writeText = function(text) {
+        if (typeof text === 'string' && text.includes('https://cloudily.org/d/')) {
+          text = text.replace(/https:\/\/cloudily\.org\/d\//g, 'https://drive.cloudily.org/');
+        }
+        return originalProtoWriteText.call(this, text);
+      };
+    }
+
+    // 2C. Đánh chặn API Clipboard hiện đại (Instance Hook - phòng hờ)
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      const originalNavWriteText = navigator.clipboard.writeText;
+      navigator.clipboard.writeText = function(text) {
+        if (typeof text === 'string' && text.includes('https://cloudily.org/d/')) {
+          text = text.replace(/https:\/\/cloudily\.org\/d\//g, 'https://drive.cloudily.org/');
+        }
+        return originalNavWriteText.call(this, text);
+      };
+    }
   }
+  
+  // Khởi chạy hệ thống đánh chặn ngay lập tức
+  interceptClipboard();
+
 
   // ==========================================
   // 3. HELPER FUNCTIONS FOR DOM MUTATIONS
@@ -73,7 +107,6 @@
     });
   }
 
-  // Hide the "Overwrite existing files" checkbox
   function hideOverwriteCheckbox() {
     const labels = document.querySelectorAll('label.hope-checkbox');
     labels.forEach(label => {
@@ -92,7 +125,6 @@
     subtitleElement.style.fontSize = fontSize + 'px';
   }
 
-  // Hàm tạo Modal Donate
   function initDonateModal() {
     if (document.getElementById('donate-modal')) return;    
     const modal = document.createElement('div');
@@ -136,7 +168,6 @@
     footer.innerHTML = '';
     footer.dataset.customized = 'true';    
     
-    // Nút Copyright
     const copyright = document.createElement('a');
     copyright.href = '/';
     copyright.textContent = '© 2026. Cloudily';
@@ -146,7 +177,6 @@
     copyright.onmouseover = () => copyright.style.textDecoration = 'underline';
     copyright.onmouseout  = () => copyright.style.textDecoration = 'none';    
     
-    // Nút Donate
     const donate = document.createElement('a');
     donate.href = 'javascript:void(0)';
     donate.textContent = '💖 Donate';
@@ -160,7 +190,6 @@
         if (modal) modal.classList.add('active');
     };
     
-    // Nút Auth (Login/Manage)
     const token = localStorage.getItem('token');
     const isLoggedIn = (token && token !== 'undefined' && token !== 'null' && token.length > 0);    
     
@@ -171,7 +200,6 @@
     authLink.style.textDecoration = 'none';
     authLink.style.whiteSpace = 'nowrap';    
     
-    // Thêm các thành phần vào footer
     footer.appendChild(copyright);
     footer.appendChild(document.createTextNode(' | '));
     footer.appendChild(donate);
@@ -189,8 +217,6 @@
   // ==========================================
   // 4. OBSERVERS SET UP
   // ==========================================
-
-  // ResizeObserver specifically for the video element
   const resizeObserver = new ResizeObserver(entries => {
     window.requestAnimationFrame(() => {
       for (let entry of entries) {
@@ -199,14 +225,12 @@
     });
   });
 
-  // ONE CENTRALIZED MutationObserver for the entire body
   const mainAppObserver = new MutationObserver(() => {
     renameDashboard();
     hideSpecificMenus();
-    hideOverwriteCheckbox(); // Hide checkbox dynamically
+    hideOverwriteCheckbox(); 
     fixFooter();
 
-    // Check for video to apply subtitle resizing
     const videoElement = document.querySelector('.art-video') || (document.querySelector('video') ? document.querySelector('video').parentNode : null);
     if (videoElement && !videoElement.dataset.subtitleObserved) {
       videoElement.dataset.subtitleObserved = 'true';
@@ -215,13 +239,11 @@
     }
   });
 
-  // Initialize the body observer
   const initMainObserver = () => {
     mainAppObserver.observe(document.body, { childList: true, subtree: true });
-    // Run an initial pass
     renameDashboard();
     hideSpecificMenus();
-    hideOverwriteCheckbox(); // Hide checkbox initially if present
+    hideOverwriteCheckbox(); 
     fixFooter();
   };
 
@@ -231,12 +253,10 @@
     window.addEventListener('DOMContentLoaded', initMainObserver);
   }
 
-  // Separate observer just for the <title> tag changes
   const titleElement = document.querySelector('title');
   if (titleElement) {
     const titleObserver = new MutationObserver(renameDashboard);
     titleObserver.observe(titleElement, { childList: true });
   }
-
 })();
 </script>
