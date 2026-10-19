@@ -1,4 +1,3 @@
-<script>
 (function() {
   // ==========================================
   // 1. DISCLAIMER BANNER (Runs once on load)
@@ -35,52 +34,68 @@
   }
 
   // ==========================================
-  // 2. CLIPBOARD INTERCEPTOR (Bulletproof)
+  // 2. CLIPBOARD INTERCEPTOR (Dành riêng cho hàm OC của AList)
   // ==========================================
+  function formatProxyUrl(text) {
+    if (typeof text === 'string' && text.includes('https://cloudily.org/d/')) {
+      return text.replace(/https:\/\/cloudily\.org\/d\//g, 'https://drive.cloudily.org/');
+    }
+    return text;
+  }
+
   function interceptClipboard() {
-    // 2A. Đánh chặn lệnh copy cũ (document.execCommand) do thư viện copy-to-clipboard sử dụng
+    // 2A. Chặn trực tiếp lúc AList gọi o.selectNodeContents(s) trên thẻ <span>
+    if (typeof Range !== 'undefined' && Range.prototype && Range.prototype.selectNodeContents) {
+      const origSelectNodeContents = Range.prototype.selectNodeContents;
+      Range.prototype.selectNodeContents = function(node) {
+        if (node && node.textContent && node.textContent.includes('https://cloudily.org/d/')) {
+          node.textContent = formatProxyUrl(node.textContent);
+        }
+        return origSelectNodeContents.call(this, node);
+      };
+    }
+
+    // 2B. Chặn sự kiện copy ở pha Capture (chạy trước khi thẻ <span> gọi stopPropagation)
+    window.addEventListener('copy', function(e) {
+      const sel = document.getSelection ? document.getSelection() : null;
+      const selectedText = sel ? sel.toString() : '';
+      if (selectedText && selectedText.includes('https://cloudily.org/d/') && e.clipboardData) {
+        e.clipboardData.setData('text/plain', formatProxyUrl(selectedText));
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    }, true);
+
+    // 2C. Chặn document.execCommand('copy') để kiểm tra vùng chọn hiện tại
     const originalExecCommand = document.execCommand;
     document.execCommand = function(command, ui, value) {
       if (command && command.toLowerCase() === 'copy') {
-        const activeEl = document.activeElement;
-        // Thư viện sẽ tạo thẻ textarea/input ẩn để copy, ta chặn ở đây
-        if (activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT')) {
-          if (activeEl.value && activeEl.value.includes('https://cloudily.org/d/')) {
-            // Thay thế URL gốc bằng URL Proxy
-            activeEl.value = activeEl.value.replace(/https:\/\/cloudily\.org\/d\//g, 'https://drive.cloudily.org/');
-            activeEl.select(); // Bôi đen lại văn bản mới để trình duyệt copy đúng URL
+        const sel = document.getSelection ? document.getSelection() : null;
+        if (sel && sel.rangeCount > 0) {
+          const range = sel.getRangeAt(0);
+          const node = range.commonAncestorContainer;
+          const el = node.nodeType === 3 ? node.parentElement : node;
+          if (el && el.textContent && el.textContent.includes('https://cloudily.org/d/')) {
+            el.textContent = formatProxyUrl(el.textContent);
+            range.selectNodeContents(el);
+            sel.removeAllRanges();
+            sel.addRange(range);
           }
         }
       }
       return originalExecCommand.apply(this, arguments);
     };
 
-    // 2B. Đánh chặn API Clipboard hiện đại (Prototype Hook)
-    if (typeof window.Clipboard !== 'undefined' && Clipboard.prototype && Clipboard.prototype.writeText) {
-      const originalProtoWriteText = Clipboard.prototype.writeText;
-      Clipboard.prototype.writeText = function(text) {
-        if (typeof text === 'string' && text.includes('https://cloudily.org/d/')) {
-          text = text.replace(/https:\/\/cloudily\.org\/d\//g, 'https://drive.cloudily.org/');
-        }
-        return originalProtoWriteText.call(this, text);
-      };
-    }
-
-    // 2C. Đánh chặn API Clipboard hiện đại (Instance Hook - phòng hờ)
+    // 2D. Dự phòng cho API Clipboard hiện đại
     if (navigator.clipboard && navigator.clipboard.writeText) {
       const originalNavWriteText = navigator.clipboard.writeText;
       navigator.clipboard.writeText = function(text) {
-        if (typeof text === 'string' && text.includes('https://cloudily.org/d/')) {
-          text = text.replace(/https:\/\/cloudily\.org\/d\//g, 'https://drive.cloudily.org/');
-        }
-        return originalNavWriteText.call(this, text);
+        return originalNavWriteText.call(navigator.clipboard, formatProxyUrl(text));
       };
     }
   }
-  
-  // Khởi chạy hệ thống đánh chặn ngay lập tức
-  interceptClipboard();
 
+  interceptClipboard();
 
   // ==========================================
   // 3. HELPER FUNCTIONS FOR DOM MUTATIONS
@@ -259,4 +274,3 @@
     titleObserver.observe(titleElement, { childList: true });
   }
 })();
-</script>
