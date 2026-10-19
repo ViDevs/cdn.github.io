@@ -1,3 +1,4 @@
+<script>
 (function() {
   // ==========================================
   // 1. DISCLAIMER BANNER (Runs once on load)
@@ -34,9 +35,22 @@
   }
 
   // ==========================================
-  // 2. HELPER FUNCTIONS FOR DOM MUTATIONS
+  // 2. CLIPBOARD INTERCEPTOR (Fix "Copy link")
   // ==========================================
-  
+  // Bắt các lệnh copy và đổi link cloudily.org/d/ thành drive.cloudily.org/
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    const originalWriteText = navigator.clipboard.writeText;
+    navigator.clipboard.writeText = function(text) {
+        if (typeof text === 'string' && text.includes('https://cloudily.org/d/')) {
+            text = text.replace('https://cloudily.org/d/', 'https://drive.cloudily.org/');
+        }
+        return originalWriteText.call(navigator.clipboard, text);
+    };
+  }
+
+  // ==========================================
+  // 3. HELPER FUNCTIONS FOR DOM MUTATIONS
+  // ==========================================
   function renameDashboard() {
     if (document.title.includes('AList Manage')) {
       document.title = document.title.replace('AList Manage', 'Dashboard');
@@ -59,7 +73,7 @@
     });
   }
 
-  // NEW FUNCTION: Hide the "Overwrite existing files" checkbox
+  // Hide the "Overwrite existing files" checkbox
   function hideOverwriteCheckbox() {
     const labels = document.querySelectorAll('label.hope-checkbox');
     labels.forEach(label => {
@@ -173,7 +187,7 @@
   }
 
   // ==========================================
-  // 3. OBSERVERS SET UP
+  // 4. OBSERVERS SET UP
   // ==========================================
 
   // ResizeObserver specifically for the video element
@@ -225,3 +239,4 @@
   }
 
 })();
+</script>
