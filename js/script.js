@@ -215,7 +215,17 @@
     authLink.style.textDecoration = 'none';
     authLink.style.whiteSpace = 'nowrap';    
     
+    const leaderboard = document.createElement('a');
+    leaderboard.href = '/leaderboard';
+    leaderboard.textContent = 'Top Contributors';
+    leaderboard.style.color = '#eab308';
+    leaderboard.style.fontWeight = 'bold';
+    leaderboard.style.textDecoration = 'none';
+    leaderboard.style.whiteSpace = 'nowrap';
+
     footer.appendChild(copyright);
+    footer.appendChild(document.createTextNode(' | '));
+    footer.appendChild(leaderboard);
     footer.appendChild(document.createTextNode(' | '));
     footer.appendChild(donate);
     footer.appendChild(document.createTextNode(' | '));
