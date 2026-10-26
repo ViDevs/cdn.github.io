@@ -31,18 +31,28 @@
 .footer {
   display: flex !important;
   flex-direction: row !important;
+  flex-wrap: wrap !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 10px !important;
-  font-size: 16px !important;
-  padding: 10px 0 16px 0 !important;
+  gap: 8px 12px !important;
+  font-size: 15px !important;
+  padding: 20px 15px 35px 15px !important;
   color: inherit !important;
   opacity: 1 !important;
+  text-align: center !important;
 }
 .footer a[href*="alist"],
 .footer a[href*="github"],
 .footer span {
   display: none !important;
+}
+
+@media (max-width: 768px) {
+  .footer {
+    font-size: 13.5px !important;
+    gap: 6px 10px !important;
+    padding: 15px 10px 45px 10px !important;
+  }
 }
 .art-video {
   display: block;
