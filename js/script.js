@@ -44,7 +44,6 @@
   }
 
   function interceptClipboard() {
-    // 2A. Chặn trực tiếp lúc AList gọi o.selectNodeContents(s) trên thẻ <span>
     if (typeof Range !== 'undefined' && Range.prototype && Range.prototype.selectNodeContents) {
       const origSelectNodeContents = Range.prototype.selectNodeContents;
       Range.prototype.selectNodeContents = function(node) {
@@ -55,7 +54,6 @@
       };
     }
 
-    // 2B. Chặn sự kiện copy ở pha Capture (chạy trước khi thẻ <span> gọi stopPropagation)
     window.addEventListener('copy', function(e) {
       const sel = document.getSelection ? document.getSelection() : null;
       const selectedText = sel ? sel.toString() : '';
@@ -66,7 +64,6 @@
       }
     }, true);
 
-    // 2C. Chặn document.execCommand('copy') để kiểm tra vùng chọn hiện tại
     const originalExecCommand = document.execCommand;
     document.execCommand = function(command, ui, value) {
       if (command && command.toLowerCase() === 'copy') {
@@ -86,7 +83,6 @@
       return originalExecCommand.apply(this, arguments);
     };
 
-    // 2D. Dự phòng cho API Clipboard hiện đại
     if (navigator.clipboard && navigator.clipboard.writeText) {
       const originalNavWriteText = navigator.clipboard.writeText;
       navigator.clipboard.writeText = function(text) {
@@ -191,6 +187,20 @@
     copyright.style.whiteSpace = 'nowrap';
     copyright.onmouseover = () => copyright.style.textDecoration = 'underline';
     copyright.onmouseout  = () => copyright.style.textDecoration = 'none';    
+
+    const leaderboard = document.createElement('a');
+    leaderboard.href = '/leaderboard';
+    leaderboard.rel = 'external';
+    leaderboard.textContent = 'Top Contributors';
+    leaderboard.style.color = '#eab308';
+    leaderboard.style.fontWeight = 'bold';
+    leaderboard.style.textDecoration = 'none';
+    leaderboard.style.whiteSpace = 'nowrap';
+    leaderboard.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window.location.href = '/leaderboard';
+    };
     
     const donate = document.createElement('a');
     donate.href = 'javascript:void(0)';
@@ -215,14 +225,6 @@
     authLink.style.textDecoration = 'none';
     authLink.style.whiteSpace = 'nowrap';    
     
-    const leaderboard = document.createElement('a');
-    leaderboard.href = '/leaderboard';
-    leaderboard.textContent = 'Top Contributors';
-    leaderboard.style.color = '#eab308';
-    leaderboard.style.fontWeight = 'bold';
-    leaderboard.style.textDecoration = 'none';
-    leaderboard.style.whiteSpace = 'nowrap';
-
     footer.appendChild(copyright);
     footer.appendChild(document.createTextNode(' | '));
     footer.appendChild(leaderboard);
