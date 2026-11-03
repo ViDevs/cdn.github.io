@@ -236,7 +236,7 @@
           
           <div style="margin-bottom: 16px;">
             <label style="font-size: 13px; font-weight: 600; color: #687076;">Số tiền (VNĐ):</label>
-            <input type="number" id="dynamic-donor-amount" value="20000" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #eceef0; border-radius: 8px; font-size: 14px; outline: none; background: #f8f9fa;">
+            <input type="number" id="dynamic-donor-amount" value="50000" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #eceef0; border-radius: 8px; font-size: 14px; outline: none; background: #f8f9fa;">
           </div>
 
           <button id="btn-generate-qr" style="width: 100%; padding: 12px; background: #1890ff; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; margin-bottom: 16px;">
