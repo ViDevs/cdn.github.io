@@ -1,6 +1,6 @@
 (function() {
   // ==========================================
-  // 1. DISCLAIMER BANNER (Runs once on load)
+  // 1. DISCLAIMER BANNER
   // ==========================================
   const STORAGE_KEY = 'disclaimer_accepted_v1';
   if (!localStorage.getItem(STORAGE_KEY)) {
@@ -90,14 +90,11 @@
       };
     }
   }
-
   interceptClipboard();
 
   // ==========================================
-  // 3. UI TWEAKS & DONATION MODAL WITH AUTO-REFRESH
+  // 3. UI TWEAKS & DONATION MODAL (Year/Month Progress)
   // ==========================================
-  
-  // Biến lưu trữ ID của bộ đếm thời gian
   let donationInterval = null;
 
   function renameDashboard() {
@@ -140,7 +137,6 @@
     subtitleElement.style.fontSize = fontSize + 'px';
   }
 
-  // Hàm độc lập để Fetch, Cập nhật Progress Bar và Render Bảng vàng
   async function fetchDonations() {
     const listContainer = document.getElementById('donors-list');
     if (!listContainer) return;
@@ -151,34 +147,36 @@
         
         const data = await res.json();
         
-        // Kiểm tra an toàn xem object trả về có hợp lệ không
-        if (!data || typeof data !== 'object') {
-            throw new Error("Route Worker chưa hoạt động, AList đang chặn request.");
-        }
+        // Render Progress Bars
+        const TARGET_MONTH = 1000000;
+        const TARGET_YEAR = 12000000;
         
-        const donorsList = data.donors || [];
         const totalMonth = data.total_month || 0;
+        const totalYear = data.total_year || 0;
         
-        // Cập nhật Thanh Tiến Trình (Mục tiêu: 1.000.000 VND)
-        const targetAmount = 1000000;
-        let percentage = (totalMonth / targetAmount) * 100;
-        if (percentage > 100) percentage = 100;
+        const monthPct = Math.min(100, Math.round((totalMonth / TARGET_MONTH) * 100));
+        const yearPct = Math.min(100, Math.round((totalYear / TARGET_YEAR) * 100));
+        const formatVND = (num) => new Intl.NumberFormat('vi-VN').format(num) + 'đ';
         
-        const fillEl = document.getElementById('donate-progress-fill');
-        const currTextEl = document.getElementById('donate-current-text');
-        const pctTextEl = document.getElementById('donate-pct-text');
+        document.getElementById('prog-month-text').textContent = formatVND(totalMonth);
+        document.getElementById('prog-month-pct').textContent = monthPct + '%';
+        document.getElementById('prog-month-fill').style.width = monthPct + '%';
+
+        document.getElementById('prog-year-text').textContent = formatVND(totalYear);
+        document.getElementById('prog-year-pct').textContent = yearPct + '%';
+        document.getElementById('prog-year-fill').style.width = yearPct + '%';
+
+        // Render Leaderboard List
+        const donors = data.donors || [];
+        if(!Array.isArray(donors)) throw new Error("Invalid array");
         
-        if (fillEl) fillEl.style.width = percentage + '%';
-        if (currTextEl) currTextEl.innerText = new Intl.NumberFormat('vi-VN').format(totalMonth) + 'đ';
-        if (pctTextEl) pctTextEl.innerText = Math.round(percentage) + '%';
-        
-        if(donorsList.length === 0) {
+        if(donors.length === 0) {
             listContainer.innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic; padding: 20px;">Chưa có dữ liệu. Hãy là người đầu tiên!</div>';
             return;
         }
         
         let html = '';
-        donorsList.forEach(d => {
+        donors.forEach(d => {
             const amt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(d.amount);
             const date = new Date(d.created_at * 1000).toLocaleDateString('vi-VN');
             const safeDonorName = String(d.donor_name).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -206,7 +204,6 @@
     modal.id = 'donate-modal';
     modal.className = 'donate-overlay';
     
-    // Đóng Modal và hủy bộ đếm khi click ra ngoài
     modal.onclick = function(e) {
         if (e.target === this) {
             this.classList.remove('active');
@@ -214,11 +211,9 @@
         }
     };    
     
-    // --- THÔNG TIN TÀI KHOẢN NHẬN TIỀN CỦA BẠN ---
     const BANK_ID = "MB";
     const ACCOUNT_NO = "00888886666";
     const ACCOUNT_NAME = "HO ANH TUNG";
-    // ---------------------------------------------
 
     modal.innerHTML = `
       <div class="donate-modal" style="max-width: 720px; display: flex; flex-wrap: wrap; padding: 0; overflow: hidden; text-align: left;">
@@ -251,24 +246,35 @@
           </div>
         </div>
 
-        <!-- Cột phải: Bảng vàng & Mục Tiêu Tháng -->
+        <!-- Cột phải: Bảng vàng & Progress Bar -->
         <div style="flex: 1; min-width: 300px; padding: 28px; background: #f8f9fa; border-left: 1px solid #eceef0; display: flex; flex-direction: column;">
-           <div style="font-size: 17px; font-weight: 700; color: #11181c; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+           <div style="font-size: 17px; font-weight: 700; color: #11181c; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
              🌟 Bảng vàng vinh danh
            </div>
            
-           <!-- Progress Bar Mục Tiêu -->
-           <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed #d9d9d9;">
-              <div style="display: flex; justify-content: space-between; font-size: 13px; color: #687076; margin-bottom: 6px; font-weight: 600;">
-                  <span>Mục tiêu tháng: <span id="donate-current-text" style="color: #1890ff;">0đ</span> / 1.000.000đ</span>
-                  <span id="donate-pct-text" style="color: #1890ff;">0%</span>
+           <!-- Thanh tiến trình năm -->
+           <div style="margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; font-size: 13px; color: #687076; margin-bottom: 4px;">
+                 <span>Mục tiêu năm: <b id="prog-year-text" style="color: #1890ff;">0đ</b> / 12.000.000đ</span>
+                 <span id="prog-year-pct" style="color: #1890ff; font-weight: 600;">0%</span>
               </div>
               <div style="width: 100%; height: 8px; background: #e1f0ff; border-radius: 99px; overflow: hidden;">
-                  <div id="donate-progress-fill" style="height: 100%; width: 0%; background: linear-gradient(90deg, #1890ff, #006adc); border-radius: 99px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                 <div id="prog-year-fill" style="height: 100%; width: 0%; background: #1890ff; border-radius: 99px; transition: width 0.8s ease;"></div>
               </div>
            </div>
 
-           <div id="donors-list" style="flex: 1; overflow-y: auto; max-height: 320px; padding-right: 6px;">
+           <!-- Thanh tiến trình tháng -->
+           <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px dashed #eceef0;">
+              <div style="display: flex; justify-content: space-between; font-size: 13px; color: #687076; margin-bottom: 4px;">
+                 <span>Mục tiêu tháng: <b id="prog-month-text" style="color: #1890ff;">0đ</b> / 1.000.000đ</span>
+                 <span id="prog-month-pct" style="color: #1890ff; font-weight: 600;">0%</span>
+              </div>
+              <div style="width: 100%; height: 8px; background: #e1f0ff; border-radius: 99px; overflow: hidden;">
+                 <div id="prog-month-fill" style="height: 100%; width: 0%; background: #1890ff; border-radius: 99px; transition: width 0.8s ease;"></div>
+              </div>
+           </div>
+
+           <div id="donors-list" style="flex: 1; overflow-y: auto; max-height: 250px; padding-right: 6px;">
               <div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic;">Đang tải danh sách...</div>
            </div>
         </div>
@@ -276,13 +282,11 @@
     `;
     document.body.appendChild(modal);
 
-    // Đóng Modal và hủy bộ đếm khi bấm nút X
     document.getElementById('btn-close-modal').addEventListener('click', function() {
         modal.classList.remove('active');
         if (donationInterval) clearInterval(donationInterval);
     });
 
-    // Sự kiện tạo QR
     document.getElementById('btn-generate-qr').addEventListener('click', function() {
         const nameInput = document.getElementById('dynamic-donor-name').value.trim();
         const amountInput = document.getElementById('dynamic-donor-amount').value.trim();
@@ -341,23 +345,14 @@
     donate.style.textDecoration = 'none';
     donate.style.whiteSpace = 'nowrap';
     
-    // Mở Modal, tải dữ liệu lần đầu, và kích hoạt Auto-Refresh 30s
     donate.onclick = (e) => {
         e.preventDefault();
         const modal = document.getElementById('donate-modal');
         if (modal) {
            modal.classList.add('active');
-           
-           // Reset giao diện list về trạng thái đang tải
            document.getElementById('donors-list').innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic;">Đang tải danh sách...</div>';
-           document.getElementById('donate-progress-fill').style.width = '0%';
-           document.getElementById('donate-current-text').innerText = '0đ';
-           document.getElementById('donate-pct-text').innerText = '0%';
            
-           // Gọi lần đầu tiên ngay lập tức
            fetchDonations();
-           
-           // Dọn dẹp Interval cũ (nếu có) và thiết lập lặp lại mỗi 30 giây (30000ms)
            if (donationInterval) clearInterval(donationInterval);
            donationInterval = setInterval(fetchDonations, 30000);
         }
