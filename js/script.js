@@ -216,14 +216,14 @@
     const ACCOUNT_NAME = "HO ANH TUNG";
 
     modal.innerHTML = `
-      <div class="donate-modal" style="max-width: 720px; display: flex; flex-wrap: wrap; padding: 0; overflow: hidden; text-align: left;">
-        <span class="donate-close" id="btn-close-modal" style="z-index: 10;">&times;</span>
+      <!-- SỬA: Thêm max-height: 90vh và overflow-y: auto -->
+      <div class="donate-modal" style="max-width: 720px; width: 90%; max-height: 90vh; overflow-y: auto; display: flex; flex-wrap: wrap; padding: 0; text-align: left; background: #ffffff; border-radius: 16px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.2); margin: auto;">
+        <span class="donate-close" id="btn-close-modal" style="position: absolute; top: 12px; right: 18px; font-size: 26px; cursor: pointer; color: #999; z-index: 10; line-height: 1;">&times;</span>
         
-        <!-- Cột trái: Form nhập & Hiển thị QR -->
         <div style="flex: 1; min-width: 320px; padding: 28px; background: #ffffff;">
-          <div class="donate-title">☕ Ủng hộ Dự án</div>
-          <div class="donate-desc" style="margin-bottom: 8px; line-height: 1.5; color: #555;">Hệ thống được vận hành và lưu trữ bằng kinh phí cá nhân. Nếu bạn thấy trang web hữu ích, hãy ủng hộ admin một ly cà phê để có thêm động lực duy trì và phát triển dự án nhé! ❤️</div>
-          <div class="donate-desc" style="margin-bottom: 20px; line-height: 1.5; color: #555;">Hãy nhập họ tên của bạn và số tiền donate!</div>
+          <div style="font-size: 20px; font-weight: 800; margin-bottom: 8px; color: #11181c;">☕ Ủng hộ Dự án</div>
+          <div style="font-size: 13.5px; color: #555; margin-bottom: 8px; line-height: 1.5;">Hệ thống được vận hành và lưu trữ bằng kinh phí cá nhân. Nếu bạn thấy trang web hữu ích, hãy ủng hộ admin một ly cà phê để có thêm động lực duy trì và phát triển dự án nhé! ❤️</div>
+          <div style="font-size: 13.5px; color: #555; margin-bottom: 20px; line-height: 1.5;">Hãy nhập họ tên của bạn và số tiền donate!</div>
           
           <div style="margin-bottom: 12px;">
             <label style="font-size: 13px; font-weight: 600; color: #687076;">Họ tên:</label>
@@ -235,25 +235,20 @@
             <input type="number" id="dynamic-donor-amount" value="50000" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #eceef0; border-radius: 8px; font-size: 14px; outline: none; background: #f8f9fa;">
           </div>
 
-          <button id="btn-generate-qr" style="width: 100%; padding: 12px; background: #1890ff; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; margin-bottom: 16px;">
-            Xem mã QR
-          </button>
+          <button id="btn-generate-qr" style="width: 100%; padding: 12px; background: #1890ff; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; margin-bottom: 16px;">Xem mã QR</button>
           
-          <!-- Nơi hiển thị mã QR Động -->
           <div id="dynamic-qr-box" style="display: none; background: #f8f9fa; padding: 16px; border-radius: 12px; border: 1px solid #eceef0; text-align: center;">
-             <img id="dynamic-qr-img" src="" alt="Mã QR Chuyển khoản" style="width: 180px; height: 180px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-             <p style="font-size: 13px; color: #11181c; margin-bottom: 4px;">Quét bằng App Ngân hàng</p>
-             <p style="font-size: 12px; color: #687076; font-style: italic;">Hệ thống sẽ tự xác nhận sau 1-2 phút.</p>
+             <!-- SỬA: Bổ sung crossorigin để fetch Blob -->
+             <img id="dynamic-qr-img" src="" crossorigin="anonymous" alt="Mã QR Chuyển khoản" style="width: 180px; height: 180px; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+             <p style="font-size: 12px; color: #687076; font-style: italic; margin-bottom: 12px;">Hệ thống tự xác nhận sau 1 phút.</p>
+             <!-- SỬA: Nút tải file ảnh trực tiếp -->
+             <a id="btn-download-qr" href="#" style="display: inline-block; padding: 8px 16px; background: #e1f0ff; color: #1890ff; font-weight: 600; font-size: 13px; text-decoration: none; border-radius: 6px;">⬇️ Tải ảnh QR</a>
           </div>
         </div>
 
-        <!-- Cột phải: Bảng vàng & Progress Bar -->
         <div style="flex: 1; min-width: 300px; padding: 28px; background: #f8f9fa; border-left: 1px solid #eceef0; display: flex; flex-direction: column;">
-           <div style="font-size: 17px; font-weight: 700; color: #11181c; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-             🌟 Bảng vàng vinh danh
-           </div>
+           <div style="font-size: 17px; font-weight: 700; color: #11181c; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">🌟 Bảng vàng vinh danh</div>
            
-           <!-- Thanh tiến trình năm -->
            <div style="margin-bottom: 12px;">
               <div style="display: flex; justify-content: space-between; font-size: 13px; color: #687076; margin-bottom: 4px;">
                  <span>Mục tiêu năm: <b id="prog-year-text" style="color: #1890ff;">0đ</b> / 12.000.000đ</span>
@@ -264,7 +259,6 @@
               </div>
            </div>
 
-           <!-- Thanh tiến trình tháng -->
            <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px dashed #eceef0;">
               <div style="display: flex; justify-content: space-between; font-size: 13px; color: #687076; margin-bottom: 4px;">
                  <span>Mục tiêu tháng: <b id="prog-month-text" style="color: #1890ff;">0đ</b> / 1.000.000đ</span>
@@ -296,13 +290,30 @@
         const content = encodeURIComponent(`DONATE ${safeName}`.substring(0, 30));
         const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.png?amount=${amountInput}&addInfo=${content}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
         
-        const qrBox = document.getElementById('dynamic-qr-box');
-        const qrImg = document.getElementById('dynamic-qr-img');
-        const btn = document.getElementById('btn-generate-qr');
-        
-        qrImg.src = qrUrl;
-        btn.style.display = 'none';
-        qrBox.style.display = 'block';
+        document.getElementById('dynamic-qr-img').src = qrUrl;
+        document.getElementById('btn-generate-qr').style.display = 'none';
+        document.getElementById('dynamic-qr-box').style.display = 'block';
+    });
+
+    // SỬA: Cơ chế ép tải file Blob để tương thích Mobile
+    document.getElementById('btn-download-qr').addEventListener('click', async function(e) {
+        e.preventDefault();
+        const imgUrl = document.getElementById('dynamic-qr-img').src;
+        try {
+            const response = await fetch(imgUrl);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = 'Donate_QR.png';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(blobUrl);
+            a.remove();
+        } catch(err) {
+            window.open(imgUrl, '_blank'); // Dự phòng nếu thiết bị chặn fetch
+        }
     });
   }
 
