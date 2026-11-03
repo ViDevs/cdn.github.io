@@ -237,12 +237,11 @@
           <button id="btn-generate-qr" style="width: 100%; padding: 12px; background: #1890ff; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; margin-bottom: 16px;">Xem mã QR</button>
           
           <!-- Box hiển thị mã QR -->
-          <div id="dynamic-qr-box" style="display: none; background: #f8f9fa; padding: 16px; border-radius: 12px; border: 1px solid #eceef0; text-align: center;">
-             <img id="dynamic-qr-img" src="" alt="Mã QR Chuyển khoản" style="width: 180px; height: 180px; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-             <p style="font-size: 12px; color: #687076; font-style: italic; margin-bottom: 12px;">Hệ thống tự xác nhận sau 1 phút.</p>
-             <!-- Nút tải file ảnh (Sử dụng chuẩn Base64 Download) -->
-             <a id="btn-download-qr" href="#" download="QR_Donate_Cloudily.png" style="display: inline-block; padding: 8px 16px; background: #e1f0ff; color: #1890ff; font-weight: 600; font-size: 13px; text-decoration: none; border-radius: 6px;">⬇️ Tải ảnh QR</a>
-          </div>
+          '<div id="dynamic-qr-box" style="display: none; background: #f8f9fa; padding: 16px; border-radius: 12px; border: 1px solid #eceef0; text-align: center;">',
+             '<img id="dynamic-qr-img" src="" alt="Mã QR Chuyển khoản" style="display: block; margin: 0 auto 12px auto; width: 180px; height: 180px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">',
+             '<p style="font-size: 12px; color: #687076; font-style: italic; margin-bottom: 12px;">Hệ thống tự xác nhận sau 1 phút.</p>',
+             '<a id="btn-download-qr" href="#" download="QR_Donate_Cloudily.png" style="display: inline-block; padding: 8px 16px; background: #e1f0ff; color: #1890ff; font-weight: 600; font-size: 13px; text-decoration: none; border-radius: 6px;">⬇️ Tải ảnh QR</a>',
+          '</div>',
         </div>
 
         <div style="flex: 1; min-width: 300px; padding: 28px; background: #f8f9fa; border-left: 1px solid #eceef0; display: flex; flex-direction: column;">
