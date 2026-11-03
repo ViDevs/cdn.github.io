@@ -147,10 +147,18 @@
     
     try {
         const res = await fetch('/api/donations');
+        
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        
         const donors = await res.json();
         
+        // Kiểm tra an toàn: Nếu AList trả về object lỗi thay vì Array từ Worker
+        if (!Array.isArray(donors)) {
+            throw new Error("Route Worker chưa hoạt động, Cloudily đang chặn request.");
+        }
+        
         if(donors.length === 0) {
-            listContainer.innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic; padding: 20px;">Chưa có dữ liệu.</div>';
+            listContainer.innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic; padding: 20px;">Chưa có dữ liệu. Hãy là người đầu tiên!</div>';
             return;
         }
         
@@ -172,7 +180,8 @@
         });
         listContainer.innerHTML = html;
     } catch (err) {
-        listContainer.innerHTML = '<div style="text-align: center; color: red; font-size: 13px; padding: 20px;">Không thể kết nối máy chủ.</div>';
+        console.error("Lỗi bảng vàng:", err);
+        listContainer.innerHTML = '<div style="text-align: center; color: #ff4d4f; font-size: 13px; padding: 20px; background: #fff1f0; border-radius: 8px;">Đang thiết lập hệ thống máy chủ...</div>';
     }
   }
 
@@ -227,7 +236,7 @@
           </div>
         </div>
 
-        <!-- Cột phải: Bảng vàng (Leaderboard) -->
+        <!-- Cột phải: Bảng vàng -->
         <div style="flex: 1; min-width: 300px; padding: 28px; background: #f8f9fa; border-left: 1px solid #eceef0; display: flex; flex-direction: column;">
            <div style="font-size: 17px; font-weight: 700; color: #11181c; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
              🌟 Bảng vàng vinh danh
