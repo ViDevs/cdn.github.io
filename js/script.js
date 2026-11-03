@@ -222,6 +222,7 @@
         <!-- Cột trái: Form nhập & Hiển thị QR -->
         <div style="flex: 1; min-width: 320px; padding: 28px; background: #ffffff;">
           <div class="donate-title">☕ Ủng hộ Dự án</div>
+          <div class="donate-desc">Hệ thống máy chủ lưu trữ và bot được duy trì hoàn toàn bằng đam mê và kinh phí cá nhân. Nếu bạn thấy công cụ này hữu ích, hãy ủng hộ admin một ly cà phê nhé!</div>
           <div class="donate-desc">Hãy nhập họ tên của bạn và số tiền donate!</div>
           
           <div style="margin-bottom: 12px;">
