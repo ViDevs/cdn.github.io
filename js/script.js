@@ -140,30 +140,45 @@
     subtitleElement.style.fontSize = fontSize + 'px';
   }
 
-  // Hàm độc lập để Fetch và Render Bảng vàng
+  // Hàm độc lập để Fetch, Cập nhật Progress Bar và Render Bảng vàng
   async function fetchDonations() {
     const listContainer = document.getElementById('donors-list');
     if (!listContainer) return;
     
     try {
         const res = await fetch('/api/donations');
-        
         if (!res.ok) throw new Error("HTTP " + res.status);
         
-        const donors = await res.json();
+        const data = await res.json();
         
-        // Kiểm tra an toàn: Nếu AList trả về object lỗi thay vì Array từ Worker
-        if (!Array.isArray(donors)) {
-            throw new Error("Route Worker chưa hoạt động, Cloudily đang chặn request.");
+        // Kiểm tra an toàn xem object trả về có hợp lệ không
+        if (!data || typeof data !== 'object') {
+            throw new Error("Route Worker chưa hoạt động, AList đang chặn request.");
         }
         
-        if(donors.length === 0) {
+        const donorsList = data.donors || [];
+        const totalMonth = data.total_month || 0;
+        
+        // Cập nhật Thanh Tiến Trình (Mục tiêu: 1.000.000 VND)
+        const targetAmount = 1000000;
+        let percentage = (totalMonth / targetAmount) * 100;
+        if (percentage > 100) percentage = 100;
+        
+        const fillEl = document.getElementById('donate-progress-fill');
+        const currTextEl = document.getElementById('donate-current-text');
+        const pctTextEl = document.getElementById('donate-pct-text');
+        
+        if (fillEl) fillEl.style.width = percentage + '%';
+        if (currTextEl) currTextEl.innerText = new Intl.NumberFormat('vi-VN').format(totalMonth) + 'đ';
+        if (pctTextEl) pctTextEl.innerText = Math.round(percentage) + '%';
+        
+        if(donorsList.length === 0) {
             listContainer.innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic; padding: 20px;">Chưa có dữ liệu. Hãy là người đầu tiên!</div>';
             return;
         }
         
         let html = '';
-        donors.forEach(d => {
+        donorsList.forEach(d => {
             const amt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(d.amount);
             const date = new Date(d.created_at * 1000).toLocaleDateString('vi-VN');
             const safeDonorName = String(d.donor_name).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -236,12 +251,24 @@
           </div>
         </div>
 
-        <!-- Cột phải: Bảng vàng -->
+        <!-- Cột phải: Bảng vàng & Mục Tiêu Tháng -->
         <div style="flex: 1; min-width: 300px; padding: 28px; background: #f8f9fa; border-left: 1px solid #eceef0; display: flex; flex-direction: column;">
-           <div style="font-size: 17px; font-weight: 700; color: #11181c; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+           <div style="font-size: 17px; font-weight: 700; color: #11181c; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
              🌟 Bảng vàng vinh danh
            </div>
-           <div id="donors-list" style="flex: 1; overflow-y: auto; max-height: 400px; padding-right: 6px;">
+           
+           <!-- Progress Bar Mục Tiêu -->
+           <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed #d9d9d9;">
+              <div style="display: flex; justify-content: space-between; font-size: 13px; color: #687076; margin-bottom: 6px; font-weight: 600;">
+                  <span>Mục tiêu tháng: <span id="donate-current-text" style="color: #1890ff;">0đ</span> / 1.000.000đ</span>
+                  <span id="donate-pct-text" style="color: #1890ff;">0%</span>
+              </div>
+              <div style="width: 100%; height: 8px; background: #e1f0ff; border-radius: 99px; overflow: hidden;">
+                  <div id="donate-progress-fill" style="height: 100%; width: 0%; background: linear-gradient(90deg, #1890ff, #006adc); border-radius: 99px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+              </div>
+           </div>
+
+           <div id="donors-list" style="flex: 1; overflow-y: auto; max-height: 320px; padding-right: 6px;">
               <div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic;">Đang tải danh sách...</div>
            </div>
         </div>
@@ -323,6 +350,9 @@
            
            // Reset giao diện list về trạng thái đang tải
            document.getElementById('donors-list').innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic;">Đang tải danh sách...</div>';
+           document.getElementById('donate-progress-fill').style.width = '0%';
+           document.getElementById('donate-current-text').innerText = '0đ';
+           document.getElementById('donate-pct-text').innerText = '0%';
            
            // Gọi lần đầu tiên ngay lập tức
            fetchDonations();
