@@ -216,7 +216,7 @@
     const ACCOUNT_NAME = "HO ANH TUNG";
 
     modal.innerHTML = `
-      <div class="donate-modal" style="max-width: 720px; width: 90%; max-height: 90vh; overflow-y: auto; display: flex; flex-wrap: wrap; padding: 0; text-align: left; background: #ffffff; border-radius: 16px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.2); margin: auto;">
+      <div class="donate-modal" style="max-width: 720px; width: 90%; max-height: 90vh; overflow-y: auto; overflow-x: hidden; word-break: break-word; display: flex; flex-wrap: wrap; padding: 0; text-align: left; background: #ffffff; border-radius: 16px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.2); margin: auto;">
         <span class="donate-close" id="btn-close-modal" style="position: absolute; top: 12px; right: 18px; font-size: 26px; cursor: pointer; color: #999; z-index: 10; line-height: 1;">&times;</span>
         
         <div style="flex: 1; min-width: 320px; padding: 28px; background: #ffffff;">
@@ -267,7 +267,7 @@
               </div>
            </div>
 
-           <div id="donors-list" style="flex: 1; overflow-y: auto; max-height: 250px; padding-right: 6px;">
+           <div id="donors-list" style="flex: 1; overflow-y: auto; overflow-x: hidden; max-height: 250px; padding-right: 6px;">
               <div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic;">Đang tải danh sách...</div>
            </div>
         </div>
