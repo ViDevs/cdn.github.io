@@ -216,7 +216,6 @@
     const ACCOUNT_NAME = "HO ANH TUNG";
 
     modal.innerHTML = `
-      <!-- SỬA: Thêm max-height: 90vh và overflow-y: auto -->
       <div class="donate-modal" style="max-width: 720px; width: 90%; max-height: 90vh; overflow-y: auto; display: flex; flex-wrap: wrap; padding: 0; text-align: left; background: #ffffff; border-radius: 16px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.2); margin: auto;">
         <span class="donate-close" id="btn-close-modal" style="position: absolute; top: 12px; right: 18px; font-size: 26px; cursor: pointer; color: #999; z-index: 10; line-height: 1;">&times;</span>
         
@@ -237,12 +236,12 @@
 
           <button id="btn-generate-qr" style="width: 100%; padding: 12px; background: #1890ff; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; margin-bottom: 16px;">Xem mã QR</button>
           
+          <!-- Box hiển thị mã QR -->
           <div id="dynamic-qr-box" style="display: none; background: #f8f9fa; padding: 16px; border-radius: 12px; border: 1px solid #eceef0; text-align: center;">
-             <!-- SỬA: Bổ sung crossorigin để fetch Blob -->
-             <img id="dynamic-qr-img" src="" crossorigin="anonymous" alt="Mã QR Chuyển khoản" style="width: 180px; height: 180px; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+             <img id="dynamic-qr-img" src="" alt="Mã QR Chuyển khoản" style="width: 180px; height: 180px; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
              <p style="font-size: 12px; color: #687076; font-style: italic; margin-bottom: 12px;">Hệ thống tự xác nhận sau 1 phút.</p>
-             <!-- SỬA: Nút tải file ảnh trực tiếp -->
-             <a id="btn-download-qr" href="#" style="display: inline-block; padding: 8px 16px; background: #e1f0ff; color: #1890ff; font-weight: 600; font-size: 13px; text-decoration: none; border-radius: 6px;">⬇️ Tải ảnh QR</a>
+             <!-- Nút tải file ảnh (Sử dụng chuẩn Base64 Download) -->
+             <a id="btn-download-qr" href="#" download="QR_Donate_Cloudily.png" style="display: inline-block; padding: 8px 16px; background: #e1f0ff; color: #1890ff; font-weight: 600; font-size: 13px; text-decoration: none; border-radius: 6px;">⬇️ Tải ảnh QR</a>
           </div>
         </div>
 
@@ -282,37 +281,58 @@
         if (donationInterval) clearInterval(donationInterval);
     });
 
-    document.getElementById('btn-generate-qr').addEventListener('click', function() {
+    // XỬ LÝ LẤY MÃ QR BẰNG VIETQR POST API (TRẢ VỀ BASE64 PNG)
+    document.getElementById('btn-generate-qr').addEventListener('click', async function() {
         const nameInput = document.getElementById('dynamic-donor-name').value.trim();
         const amountInput = document.getElementById('dynamic-donor-amount').value.trim();
         
-        let safeName = nameInput ? nameInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s]/g, "") : "Nha Hao Tam";
-        const content = encodeURIComponent(`DONATE ${safeName}`.substring(0, 30));
-        const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.png?amount=${amountInput}&addInfo=${content}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
+        const safeName = nameInput ? nameInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s]/g, "") : "Nha Hao Tam";
+        const contentStr = ("DONATE " + safeName).substring(0, 30);
         
-        document.getElementById('dynamic-qr-img').src = qrUrl;
-        document.getElementById('btn-generate-qr').style.display = 'none';
-        document.getElementById('dynamic-qr-box').style.display = 'block';
-    });
+        const btn = document.getElementById('btn-generate-qr');
+        btn.textContent = "Đang tạo mã...";
+        btn.style.opacity = "0.7";
+        btn.style.pointerEvents = "none";
 
-    // SỬA: Cơ chế ép tải file Blob để tương thích Mobile
-    document.getElementById('btn-download-qr').addEventListener('click', async function(e) {
-        e.preventDefault();
-        const imgUrl = document.getElementById('dynamic-qr-img').src;
         try {
-            const response = await fetch(imgUrl);
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = blobUrl;
-            a.download = 'Donate_QR.png';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(blobUrl);
-            a.remove();
-        } catch(err) {
-            window.open(imgUrl, '_blank'); // Dự phòng nếu thiết bị chặn fetch
+            const response = await fetch("https://api.vietqr.io/v2/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    accountNo: ACCOUNT_NO,
+                    accountName: ACCOUNT_NAME,
+                    acqId: 970422, // Mã BIN của MB Bank
+                    amount: Number(amountInput),
+                    addInfo: contentStr,
+                    format: "text",
+                    template: "compact2"
+                })
+            });
+            const data = await response.json();
+            
+            if (data.code === "00") {
+                const base64Png = data.data.qrDataURL;
+                
+                // Gán Base64 vào thẻ ảnh
+                document.getElementById('dynamic-qr-img').src = base64Png;
+                
+                // Gán Base64 vào thẻ a để tải xuống
+                document.getElementById('btn-download-qr').href = base64Png;
+                
+                btn.style.display = 'none';
+                document.getElementById('dynamic-qr-box').style.display = 'block';
+            } else {
+                alert("Lỗi tạo QR: " + data.desc);
+                btn.textContent = "Xem mã QR";
+                btn.style.opacity = "1";
+                btn.style.pointerEvents = "auto";
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Không thể kết nối đến máy chủ VietQR.");
+            btn.textContent = "Xem mã QR";
+            btn.style.opacity = "1";
+            btn.style.pointerEvents = "auto";
         }
     });
   }
