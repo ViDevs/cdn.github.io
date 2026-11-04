@@ -420,19 +420,26 @@
     });
   });
 
-  // Biến cờ để chỉ tự động bật Modal 1 lần duy nhất khi vừa vào web
   let hasAutoOpenedDonate = false;
   function checkAutoOpenDonate() {
-    if (!hasAutoOpenedDonate && window.location.hash === '#donate') {
+    const href = window.location.href;
+    // Bắt linh hoạt cả đuôi #donate và ?donate=1
+    if (!hasAutoOpenedDonate && (href.includes('#donate') || href.includes('donate=1'))) {
       const modal = document.getElementById('donate-modal');
       if (modal) {
-         modal.classList.add('active');
-         document.getElementById('donors-list').innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic;">Đang tải danh sách...</div>';
-         fetchDonations();
-         hasAutoOpenedDonate = true;
+         hasAutoOpenedDonate = true; 
          
-         // Xóa chữ #donate trên thanh địa chỉ cho đẹp mà không làm tải lại trang
-         history.replaceState(null, null, window.location.pathname + window.location.search);
+         // Độ trễ 400ms giúp trình duyệt Mobile render mượt mà không bị kẹt
+         setTimeout(() => {
+             modal.classList.add('active');
+             document.getElementById('donors-list').innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic;">Đang tải danh sách...</div>';
+             fetchDonations();
+         }, 400);
+         
+         // Dọn dẹp thanh địa chỉ cho đẹp
+         let cleanUrl = href.replace('#donate', '').replace('?donate=1', '').replace('&&', '&');
+         if (cleanUrl.endsWith('?')) cleanUrl = cleanUrl.slice(0, -1);
+         history.replaceState(null, null, cleanUrl);
       }
     }
   }
@@ -442,7 +449,7 @@
     hideSpecificMenus();
     hideOverwriteCheckbox(); 
     fixFooter();
-    checkAutoOpenDonate(); // Kiểm tra bật Modal tự động
+    checkAutoOpenDonate(); 
 
     const videoElement = document.querySelector('.art-video') || (document.querySelector('video') ? document.querySelector('video').parentNode : null);
     if (videoElement && !videoElement.dataset.subtitleObserved) {
@@ -458,7 +465,7 @@
     hideSpecificMenus();
     hideOverwriteCheckbox(); 
     fixFooter();
-    checkAutoOpenDonate(); // Kiểm tra bật Modal tự động
+    checkAutoOpenDonate(); 
   };
 
   if (document.body) {
