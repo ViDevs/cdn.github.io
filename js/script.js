@@ -410,7 +410,7 @@
   }
 
   // ==========================================
-  // 4. OBSERVERS SET UP
+  // 4. OBSERVERS SET UP & AUTO-OPEN MODAL
   // ==========================================
   const resizeObserver = new ResizeObserver(entries => {
     window.requestAnimationFrame(() => {
@@ -420,11 +420,29 @@
     });
   });
 
+  // Biến cờ để chỉ tự động bật Modal 1 lần duy nhất khi vừa vào web
+  let hasAutoOpenedDonate = false;
+  function checkAutoOpenDonate() {
+    if (!hasAutoOpenedDonate && window.location.hash === '#donate') {
+      const modal = document.getElementById('donate-modal');
+      if (modal) {
+         modal.classList.add('active');
+         document.getElementById('donors-list').innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic;">Đang tải danh sách...</div>';
+         fetchDonations();
+         hasAutoOpenedDonate = true;
+         
+         // Xóa chữ #donate trên thanh địa chỉ cho đẹp mà không làm tải lại trang
+         history.replaceState(null, null, window.location.pathname + window.location.search);
+      }
+    }
+  }
+
   const mainAppObserver = new MutationObserver(() => {
     renameDashboard();
     hideSpecificMenus();
     hideOverwriteCheckbox(); 
     fixFooter();
+    checkAutoOpenDonate(); // Kiểm tra bật Modal tự động
 
     const videoElement = document.querySelector('.art-video') || (document.querySelector('video') ? document.querySelector('video').parentNode : null);
     if (videoElement && !videoElement.dataset.subtitleObserved) {
@@ -440,6 +458,7 @@
     hideSpecificMenus();
     hideOverwriteCheckbox(); 
     fixFooter();
+    checkAutoOpenDonate(); // Kiểm tra bật Modal tự động
   };
 
   if (document.body) {
