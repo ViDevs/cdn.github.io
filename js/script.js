@@ -412,6 +412,12 @@
   // ==========================================
   // 4. OBSERVERS SET UP & AUTO-OPEN MODAL
   // ==========================================
+  
+  // BẮT CỜ NGAY LẬP TỨC: Lưu vào bộ nhớ tạm trước khi Router của AList kịp xóa URL
+  if (window.location.href.includes('#donate') || window.location.href.includes('donate=1')) {
+      sessionStorage.setItem('trigger_donate_modal', 'yes');
+  }
+
   const resizeObserver = new ResizeObserver(entries => {
     window.requestAnimationFrame(() => {
       for (let entry of entries) {
@@ -422,24 +428,30 @@
 
   let hasAutoOpenedDonate = false;
   function checkAutoOpenDonate() {
-    const href = window.location.href;
-    // Bắt linh hoạt cả đuôi #donate và ?donate=1
-    if (!hasAutoOpenedDonate && (href.includes('#donate') || href.includes('donate=1'))) {
+    // Đọc cờ từ bộ nhớ tạm thay vì đọc thanh địa chỉ URL
+    if (!hasAutoOpenedDonate && sessionStorage.getItem('trigger_donate_modal') === 'yes') {
       const modal = document.getElementById('donate-modal');
       if (modal) {
          hasAutoOpenedDonate = true; 
+         sessionStorage.removeItem('trigger_donate_modal'); // Xóa cờ để không bị lặp lại
          
-         // Độ trễ 400ms giúp trình duyệt Mobile render mượt mà không bị kẹt
+         // Vẫn giữ độ trễ 400ms để trình duyệt bung giao diện mượt mà
          setTimeout(() => {
-             modal.classList.add('active');
-             document.getElementById('donors-list').innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic;">Đang tải danh sách...</div>';
-             fetchDonations();
+             const activeModal = document.getElementById('donate-modal');
+             if (activeModal) {
+                 activeModal.classList.add('active');
+                 document.getElementById('donors-list').innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic;">Đang tải danh sách...</div>';
+                 fetchDonations();
+             }
          }, 400);
          
-         // Dọn dẹp thanh địa chỉ cho đẹp
-         let cleanUrl = href.replace('#donate', '').replace('?donate=1', '').replace('&&', '&');
-         if (cleanUrl.endsWith('?')) cleanUrl = cleanUrl.slice(0, -1);
-         history.replaceState(null, null, cleanUrl);
+         // Dọn dẹp thanh địa chỉ nếu router của AList chưa dọn
+         const currentUrl = window.location.href;
+         if (currentUrl.includes('donate')) {
+             let cleanUrl = currentUrl.replace('#donate', '').replace('?donate=1', '').replace('&&', '&');
+             if (cleanUrl.endsWith('?')) cleanUrl = cleanUrl.slice(0, -1);
+             history.replaceState(null, null, cleanUrl);
+         }
       }
     }
   }
