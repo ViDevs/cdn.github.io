@@ -95,7 +95,6 @@
   // ==========================================
   // 3. UI TWEAKS & DONATION MODAL (Year/Month Progress)
   // ==========================================
-  let donationInterval = null;
 
   function renameDashboard() {
     if (document.title.includes('AList Manage')) {
@@ -207,7 +206,6 @@
     modal.onclick = function(e) {
         if (e.target === this) {
             this.classList.remove('active');
-            if (donationInterval) clearInterval(donationInterval);
         }
     };    
     
@@ -277,7 +275,6 @@
 
     document.getElementById('btn-close-modal').addEventListener('click', function() {
         modal.classList.remove('active');
-        if (donationInterval) clearInterval(donationInterval);
     });
 
     // XỬ LÝ LẤY MÃ QR BẰNG VIETQR POST API (TRẢ VỀ BASE64 PNG)
@@ -382,10 +379,7 @@
         if (modal) {
            modal.classList.add('active');
            document.getElementById('donors-list').innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic;">Đang tải danh sách...</div>';
-           
            fetchDonations();
-           if (donationInterval) clearInterval(donationInterval);
-           donationInterval = setInterval(fetchDonations, 30000);
         }
     };
     
