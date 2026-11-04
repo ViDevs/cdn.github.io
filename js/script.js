@@ -93,7 +93,7 @@
   interceptClipboard();
 
   // ==========================================
-  // 3. UI TWEAKS & DONATION MODAL (Year/Month Progress)
+  // 3. UI TWEAKS & DONATION MODAL
   // ==========================================
 
   function renameDashboard() {
@@ -146,7 +146,6 @@
         
         const data = await res.json();
         
-        // Render Progress Bars
         const TARGET_MONTH = 1000000;
         const TARGET_YEAR = 12000000;
         
@@ -165,7 +164,6 @@
         document.getElementById('prog-year-pct').textContent = yearPct + '%';
         document.getElementById('prog-year-fill').style.width = yearPct + '%';
 
-        // Render Leaderboard List
         const donors = data.donors || [];
         if(!Array.isArray(donors)) throw new Error("Invalid array");
         
@@ -209,9 +207,9 @@
         }
     };    
     
-    const BANK_ID = "MB";
+    // Cấu hình ngân hàng
+    const BANK_BIN = "970422"; // BIN MBBank
     const ACCOUNT_NO = "00888886666";
-    const ACCOUNT_NAME = "HO ANH TUNG";
 
     modal.innerHTML = `
       <div class="donate-modal" style="max-width: 720px; width: 90%; max-height: 90vh; overflow-y: auto; overflow-x: hidden; word-break: break-word; display: flex; flex-wrap: wrap; padding: 0; text-align: left; background: #ffffff; border-radius: 16px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.2); margin: auto;">
@@ -234,7 +232,6 @@
 
           <button id="btn-generate-qr" style="width: 100%; padding: 12px; background: #1890ff; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; margin-bottom: 16px;">Xem mã QR</button>
           
-          <!-- Nơi hiển thị mã QR Động -->
           <div id="dynamic-qr-box" style="display: none; background: #f8f9fa; padding: 16px; border-radius: 12px; border: 1px solid #eceef0; text-align: center;">
              <img id="dynamic-qr-img" src="" alt="Mã QR Chuyển khoản" style="display: block; margin: 0 auto 12px auto; width: 180px; height: 180px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
              <p style="font-size: 12px; color: #687076; font-style: italic; margin-bottom: 12px;">Hệ thống tự xác nhận sau 1 phút.</p>
@@ -277,55 +274,83 @@
         modal.classList.remove('active');
     });
 
-    // XỬ LÝ LẤY MÃ QR BẰNG VIETQR POST API (TRẢ VỀ BASE64 PNG)
+    // ========================================================
+    // LOGIC TẠO MÃ VIETQR OFFLINE (KHÔNG DÙNG API BÊN NGOÀI)
+    // ========================================================
     document.getElementById('btn-generate-qr').addEventListener('click', async function() {
-        const nameInput = document.getElementById('dynamic-donor-name').value.trim();
-        const amountInput = document.getElementById('dynamic-donor-amount').value.trim();
-        
-        const safeName = nameInput ? nameInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s]/g, "") : "Nha Hao Tam";
-        const contentStr = ("DONATE " + safeName).substring(0, 30);
-        
         const btn = document.getElementById('btn-generate-qr');
-        btn.textContent = "Đang tạo mã...";
+        btn.textContent = "Đang kết xuất ảnh...";
         btn.style.opacity = "0.7";
         btn.style.pointerEvents = "none";
 
         try {
-            const response = await fetch("https://api.vietqr.io/v2/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    accountNo: ACCOUNT_NO,
-                    accountName: ACCOUNT_NAME,
-                    acqId: 970422, // Mã BIN của MB Bank
-                    amount: Number(amountInput),
-                    addInfo: contentStr,
-                    format: "text",
-                    template: "compact2"
-                })
-            });
-            const data = await response.json();
-            
-            if (data.code === "00") {
-                const base64Png = data.data.qrDataURL;
-                
-                // Gán Base64 vào thẻ ảnh
-                document.getElementById('dynamic-qr-img').src = base64Png;
-                
-                // Gán Base64 vào thẻ a để tải xuống
-                document.getElementById('btn-download-qr').href = base64Png;
-                
-                btn.style.display = 'none';
-                document.getElementById('dynamic-qr-box').style.display = 'block';
-            } else {
-                alert("Lỗi tạo QR: " + data.desc);
-                btn.textContent = "Xem mã QR";
-                btn.style.opacity = "1";
-                btn.style.pointerEvents = "auto";
+            // 1. Tải thư viện vẽ ảnh QR nhẹ (QRious) từ CDN nếu chưa có
+            if (typeof QRious === 'undefined') {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = "https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js";
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
             }
+
+            // 2. Thu thập dữ liệu và làm sạch
+            const nameInput = document.getElementById('dynamic-donor-name').value.trim();
+            let amountInput = document.getElementById('dynamic-donor-amount').value.trim();
+            amountInput = amountInput ? String(Number(amountInput)) : "";
+            
+            const safeName = nameInput ? nameInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s]/g, "") : "Nha Hao Tam";
+            const contentStr = ("DONATE " + safeName).substring(0, 30);
+
+            // 3. Thuật toán tạo chuỗi EMVCo/NAPAS chuẩn VietQR
+            const pad = (n) => n < 10 ? '0' + n : String(n);
+            const tlv = (id, val) => id + pad(val.length) + val;
+            
+            const field00 = tlv('00', '01');
+            const field01 = tlv('01', amountInput ? '12' : '11');
+            const guid = tlv('00', 'A000000727');
+            const bank = tlv('00', BANK_BIN) + tlv('01', ACCOUNT_NO);
+            const beneOrg = tlv('01', bank);
+            const serviceCode = tlv('02', 'QRIBFTTA');
+            
+            const field38 = tlv('38', guid + beneOrg + serviceCode);
+            const field53 = tlv('53', '704');
+            const field54 = amountInput ? tlv('54', amountInput) : '';
+            const field58 = tlv('58', 'VN');
+            const field62 = contentStr ? tlv('62', tlv('08', contentStr)) : '';
+            
+            const payload = field00 + field01 + field38 + field53 + field54 + field58 + field62 + '6304';
+            
+            // 4. Thuật toán tính Checksum CRC16-CCITT
+            let crc = 0xFFFF;
+            for (let i = 0; i < payload.length; i++) {
+                crc ^= payload.charCodeAt(i) << 8;
+                for (let j = 0; j < 8; j++) {
+                    if ((crc & 0x8000) > 0) crc = (crc << 1) ^ 0x1021;
+                    else crc = crc << 1;
+                }
+            }
+            const crcStr = (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+            const finalQRString = payload + crcStr;
+
+            // 5. Vẽ ảnh Base64
+            const qr = new QRious({
+                value: finalQRString,
+                size: 350,
+                level: 'M'
+            });
+            const base64Png = qr.toDataURL('image/png');
+            
+            // 6. Cập nhật giao diện
+            document.getElementById('dynamic-qr-img').src = base64Png;
+            document.getElementById('btn-download-qr').href = base64Png;
+            
+            btn.style.display = 'none';
+            document.getElementById('dynamic-qr-box').style.display = 'block';
         } catch (err) {
             console.error(err);
-            alert("Không thể kết nối đến máy chủ VietQR.");
+            alert("Lỗi hệ thống: Không thể khởi tạo mã QR.");
             btn.textContent = "Xem mã QR";
             btn.style.opacity = "1";
             btn.style.pointerEvents = "auto";
@@ -413,7 +438,6 @@
   // 4. OBSERVERS SET UP & AUTO-OPEN MODAL
   // ==========================================
   
-  // BẮT CỜ NGAY LẬP TỨC: Lưu vào bộ nhớ tạm trước khi Router của AList kịp xóa URL
   if (window.location.href.includes('#donate') || window.location.href.includes('donate=1')) {
       sessionStorage.setItem('trigger_donate_modal', 'yes');
   }
@@ -428,14 +452,12 @@
 
   let hasAutoOpenedDonate = false;
   function checkAutoOpenDonate() {
-    // Đọc cờ từ bộ nhớ tạm thay vì đọc thanh địa chỉ URL
     if (!hasAutoOpenedDonate && sessionStorage.getItem('trigger_donate_modal') === 'yes') {
       const modal = document.getElementById('donate-modal');
       if (modal) {
          hasAutoOpenedDonate = true; 
-         sessionStorage.removeItem('trigger_donate_modal'); // Xóa cờ để không bị lặp lại
+         sessionStorage.removeItem('trigger_donate_modal'); 
          
-         // Vẫn giữ độ trễ 400ms để trình duyệt bung giao diện mượt mà
          setTimeout(() => {
              const activeModal = document.getElementById('donate-modal');
              if (activeModal) {
@@ -445,7 +467,6 @@
              }
          }, 400);
          
-         // Dọn dẹp thanh địa chỉ nếu router của AList chưa dọn
          const currentUrl = window.location.href;
          if (currentUrl.includes('donate')) {
              let cleanUrl = currentUrl.replace('#donate', '').replace('?donate=1', '').replace('&&', '&');
