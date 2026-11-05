@@ -322,7 +322,7 @@
     });
 
     // ========================================================
-    // LOGIC TẠO MÃ VIETQR OFFLINE & LONG-POLLING THÔNG BÁO THÀNH CÔNG
+    // LOGIC TẠO MÃ VIETQR OFFLINE & LONG-POLLING THÔNG BÁO THÀNH CÔNG (ĐÃ FIX)
     // ========================================================
     document.getElementById('btn-generate-qr').addEventListener('click', async function() {
         const btn = document.getElementById('btn-generate-qr');
@@ -341,15 +341,21 @@
                 });
             }
 
+            if (!document.getElementById('polling-spinner-style')) {
+                const style = document.createElement('style');
+                style.id = 'polling-spinner-style';
+                style.innerHTML = "@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } .polling-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #1890ff; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; }";
+                document.head.appendChild(style);
+            }
+
             const nameInput = document.getElementById('dynamic-donor-name').value.trim();
             let amountInput = document.getElementById('dynamic-donor-amount').value.trim();
             amountInput = amountInput ? String(Number(amountInput)) : "";
             
             const safeName = nameInput ? nameInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s]/g, "") : "Nha Hao Tam";
             
-            // THÊM: Sinh 4 mã số ngẫu nhiên vào Tx_Code để webhook/polling đối soát chuẩn 100%
             const randomCode = Math.floor(1000 + Math.random() * 9000);
-            const txCode = ("DONATE " + safeName + " " + randomCode).substring(0, 30);
+            const txCode = ("DONATE " + safeName + " " + randomCode).substring(0, 30).toUpperCase();
 
             const pad = (n) => n < 10 ? '0' + n : String(n);
             const tlv = (id, val) => id + pad(val.length) + val;
@@ -387,25 +393,38 @@
             });
             const base64Png = qr.toDataURL('image/png');
             
-            document.getElementById('dynamic-qr-img').src = base64Png;
-            document.getElementById('btn-download-qr').href = base64Png;
+            const qrBox = document.getElementById('dynamic-qr-box');
+            qrBox.innerHTML = `
+                 <img id="dynamic-qr-img" src="${base64Png}" alt="Mã QR Chuyển khoản" style="display: block; margin: 0 auto 12px auto; width: 180px; height: 180px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                 <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom: 8px;">
+                    <div class="polling-spinner"></div>
+                    <p style="font-size: 13px; color: #1890ff; font-weight:600; margin:0;">Đang chờ ngân hàng xác nhận...</p>
+                 </div>
+                 <p style="font-size: 11.5px; color: #687076; font-style: italic; margin-bottom: 12px;">(Vui lòng không đóng cửa sổ này, hệ thống sẽ tự cập nhật khi nhận được tiền)</p>
+                 <a id="btn-download-qr" href="${base64Png}" download="QR_Donate_Cloudily.png" style="display: inline-block; padding: 8px 16px; background: #e1f0ff; color: #1890ff; font-weight: 600; font-size: 13px; text-decoration: none; border-radius: 6px;">⬇️ Tải mã QR</a>
+            `;
             
             btn.style.display = 'none';
-            document.getElementById('dynamic-qr-box').style.display = 'block';
+            qrBox.style.display = 'block';
 
-            // THÊM: LONG-POLLING - Liên tục check API xem giao dịch thành công chưa
             if (pollInterval) clearInterval(pollInterval);
+            let pollCount = 0;
             pollInterval = setInterval(async () => {
+                pollCount++;
+                if (pollCount > 150) { 
+                    clearInterval(pollInterval);
+                    return;
+                }
                 try {
                     const res = await fetch(`/api/check-donate?tx=${encodeURIComponent(txCode)}`);
                     const data = await res.json();
                     if (data.success) {
-                        clearInterval(pollInterval); // Dừng check
-                        triggerConfetti(document.getElementById('dynamic-qr-box')); // Hiển thị Pháo hoa thành công
-                        fetchDonations(); // Auto Refresh Bảng vàng cập nhật tên user ngay
+                        clearInterval(pollInterval); 
+                        triggerConfetti(document.getElementById('dynamic-qr-box')); 
+                        fetchDonations();
                     }
                 } catch(e) { }
-            }, 3000); // Tự động quét 3 giây/lần
+            }, 2000);
 
         } catch (err) {
             console.error(err);
