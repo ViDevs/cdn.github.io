@@ -136,9 +136,39 @@
     subtitleElement.style.fontSize = fontSize + 'px';
   }
 
+  // --- NÂNG CẤP: VIRTUAL SCROLLING / LAZY LOAD CHO DANH SÁCH ---
+  let allDonorsCache = [];
+  let currentRenderedIndex = 0;
+  const CHUNK_SIZE = 10;
+  
+  function renderDonorsChunk() {
+    const listContainer = document.getElementById('donors-inner-list');
+    if (!listContainer || currentRenderedIndex >= allDonorsCache.length) return;
+
+    const chunk = allDonorsCache.slice(currentRenderedIndex, currentRenderedIndex + CHUNK_SIZE);
+    let html = '';
+    chunk.forEach(d => {
+        const amt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(d.amount);
+        const date = new Date(d.created_at * 1000).toLocaleDateString('vi-VN');
+        const safeDonorName = String(d.donor_name).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        
+        html += `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #fff; border: 1px solid #eceef0; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+             <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 13px; font-weight: 600; color: #11181c;">${safeDonorName}</span>
+                <span style="font-size: 11px; color: #687076;">${date}</span>
+             </div>
+             <div style="font-size: 13px; font-weight: 700; color: #ff4d4f;">+${amt}</div>
+          </div>
+        `;
+    });
+    listContainer.insertAdjacentHTML('beforeend', html);
+    currentRenderedIndex += CHUNK_SIZE;
+  }
+
   async function fetchDonations() {
-    const listContainer = document.getElementById('donors-list');
-    if (!listContainer) return;
+    const listWrap = document.getElementById('donors-list');
+    if (!listWrap) return;
     
     try {
         const res = await fetch('/api/donations');
@@ -168,32 +198,47 @@
         if(!Array.isArray(donors)) throw new Error("Invalid array");
         
         if(donors.length === 0) {
-            listContainer.innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic; padding: 20px;">Chưa có dữ liệu. Hãy là người đầu tiên!</div>';
+            listWrap.innerHTML = '<div style="text-align: center; color: #687076; font-size: 13.5px; font-style: italic; padding: 20px;">Chưa có dữ liệu. Hãy là người đầu tiên!</div>';
             return;
         }
         
-        let html = '';
-        donors.forEach(d => {
-            const amt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(d.amount);
-            const date = new Date(d.created_at * 1000).toLocaleDateString('vi-VN');
-            const safeDonorName = String(d.donor_name).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            
-            html += `
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #fff; border: 1px solid #eceef0; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-                 <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <span style="font-size: 13px; font-weight: 600; color: #11181c;">${safeDonorName}</span>
-                    <span style="font-size: 11px; color: #687076;">${date}</span>
-                 </div>
-                 <div style="font-size: 13px; font-weight: 700; color: #ff4d4f;">+${amt}</div>
-              </div>
-            `;
-        });
-        listContainer.innerHTML = html;
+        // VIRTUAL SCROLLING SETUP
+        allDonorsCache = donors;
+        currentRenderedIndex = 0;
+        listWrap.innerHTML = '<div id="donors-inner-list"></div><div id="donors-sentinel" style="height: 10px;"></div>';
+        renderDonorsChunk(); 
+
+        const sentinel = document.getElementById('donors-sentinel');
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) renderDonorsChunk();
+        }, { root: listWrap, threshold: 0.1 });
+        observer.observe(sentinel);
+
     } catch (err) {
         console.error("Lỗi bảng vàng:", err);
-        listContainer.innerHTML = '<div style="text-align: center; color: #ff4d4f; font-size: 13px; padding: 20px; background: #fff1f0; border-radius: 8px;">Đang thiết lập hệ thống máy chủ...</div>';
+        listWrap.innerHTML = '<div style="text-align: center; color: #ff4d4f; font-size: 13px; padding: 20px; background: #fff1f0; border-radius: 8px;">Đang thiết lập hệ thống máy chủ...</div>';
     }
   }
+
+  // --- NÂNG CẤP: HIỆU ỨNG PHÁO HOA ---
+  function triggerConfetti(container) {
+    const text = document.createElement('div');
+    text.innerHTML = "🎉 THÀNH CÔNG 🎉";
+    text.style.cssText = "color: #1890ff; font-weight: 900; font-size: 22px; animation: popIn 0.5s ease; margin-bottom:10px;";
+    
+    if (!document.getElementById('confetti-style')) {
+        const style = document.createElement('style');
+        style.id = 'confetti-style';
+        style.innerHTML = "@keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }";
+        document.head.appendChild(style);
+    }
+    
+    container.innerHTML = "";
+    container.appendChild(text);
+    container.insertAdjacentHTML('beforeend', '<p style="color:#555;font-size:14px;">Cảm ơn bạn đã ủng hộ dự án!</p>');
+  }
+
+  let pollInterval = null; // Quản lý tiến trình check webhook
 
   function initDonateModal() {
     if (document.getElementById('donate-modal')) return;    
@@ -203,6 +248,7 @@
     
     modal.onclick = function(e) {
         if (e.target === this) {
+            if (pollInterval) clearInterval(pollInterval);
             this.classList.remove('active');
         }
     };    
@@ -271,11 +317,12 @@
     document.body.appendChild(modal);
 
     document.getElementById('btn-close-modal').addEventListener('click', function() {
+        if (pollInterval) clearInterval(pollInterval);
         modal.classList.remove('active');
     });
 
     // ========================================================
-    // LOGIC TẠO MÃ VIETQR OFFLINE (KHÔNG DÙNG API BÊN NGOÀI)
+    // LOGIC TẠO MÃ VIETQR OFFLINE & LONG-POLLING THÔNG BÁO THÀNH CÔNG
     // ========================================================
     document.getElementById('btn-generate-qr').addEventListener('click', async function() {
         const btn = document.getElementById('btn-generate-qr');
@@ -284,7 +331,6 @@
         btn.style.pointerEvents = "none";
 
         try {
-            // 1. Tải thư viện vẽ ảnh QR nhẹ (QRious) từ CDN nếu chưa có
             if (typeof QRious === 'undefined') {
                 await new Promise((resolve, reject) => {
                     const script = document.createElement('script');
@@ -295,15 +341,16 @@
                 });
             }
 
-            // 2. Thu thập dữ liệu và làm sạch
             const nameInput = document.getElementById('dynamic-donor-name').value.trim();
             let amountInput = document.getElementById('dynamic-donor-amount').value.trim();
             amountInput = amountInput ? String(Number(amountInput)) : "";
             
             const safeName = nameInput ? nameInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s]/g, "") : "Nha Hao Tam";
-            const contentStr = ("DONATE " + safeName).substring(0, 30);
+            
+            // THÊM: Sinh 4 mã số ngẫu nhiên vào Tx_Code để webhook/polling đối soát chuẩn 100%
+            const randomCode = Math.floor(1000 + Math.random() * 9000);
+            const txCode = ("DONATE " + safeName + " " + randomCode).substring(0, 30);
 
-            // 3. Thuật toán tạo chuỗi EMVCo/NAPAS chuẩn VietQR
             const pad = (n) => n < 10 ? '0' + n : String(n);
             const tlv = (id, val) => id + pad(val.length) + val;
             
@@ -318,11 +365,10 @@
             const field53 = tlv('53', '704');
             const field54 = amountInput ? tlv('54', amountInput) : '';
             const field58 = tlv('58', 'VN');
-            const field62 = contentStr ? tlv('62', tlv('08', contentStr)) : '';
+            const field62 = txCode ? tlv('62', tlv('08', txCode)) : '';
             
             const payload = field00 + field01 + field38 + field53 + field54 + field58 + field62 + '6304';
             
-            // 4. Thuật toán tính Checksum CRC16-CCITT
             let crc = 0xFFFF;
             for (let i = 0; i < payload.length; i++) {
                 crc ^= payload.charCodeAt(i) << 8;
@@ -334,7 +380,6 @@
             const crcStr = (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
             const finalQRString = payload + crcStr;
 
-            // 5. Vẽ ảnh Base64
             const qr = new QRious({
                 value: finalQRString,
                 size: 350,
@@ -342,12 +387,26 @@
             });
             const base64Png = qr.toDataURL('image/png');
             
-            // 6. Cập nhật giao diện
             document.getElementById('dynamic-qr-img').src = base64Png;
             document.getElementById('btn-download-qr').href = base64Png;
             
             btn.style.display = 'none';
             document.getElementById('dynamic-qr-box').style.display = 'block';
+
+            // THÊM: LONG-POLLING - Liên tục check API xem giao dịch thành công chưa
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/check-donate?tx=${encodeURIComponent(txCode)}`);
+                    const data = await res.json();
+                    if (data.success) {
+                        clearInterval(pollInterval); // Dừng check
+                        triggerConfetti(document.getElementById('dynamic-qr-box')); // Hiển thị Pháo hoa thành công
+                        fetchDonations(); // Auto Refresh Bảng vàng cập nhật tên user ngay
+                    }
+                } catch(e) { }
+            }, 3000); // Tự động quét 3 giây/lần
+
         } catch (err) {
             console.error(err);
             alert("Lỗi hệ thống: Không thể khởi tạo mã QR.");
