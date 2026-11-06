@@ -435,12 +435,12 @@
             let pollCount = 0;
             pollInterval = setInterval(async () => {
                 pollCount++;
-                if (pollCount > 150) { 
+                if (pollCount > 20) { 
                     clearInterval(pollInterval);
                     document.getElementById('timeout-msg').innerHTML = "<span style='color:#eab308;font-weight:600;'>⏳ Đã hết thời gian chờ tự động.</span> Nếu bạn đã chuyển khoản, hệ thống vẫn sẽ ghi nhận trên Bảng vàng sau ít phút.";
                     document.getElementById('poll-spin-icon').style.display = 'none';
                     document.getElementById('poll-spin-text').style.color = '#eab308';
-                    document.getElementById('poll-spin-text').textContent = 'Tạm dừng quét liên tục';
+                    document.getElementById('poll-spin-text').textContent = 'Tạm dừng kiểm tra';
                     return;
                 }
                 try {
@@ -452,7 +452,7 @@
                         fetchDonations();
                     }
                 } catch(e) { }
-            }, 2000);
+            }, 3000);
 
         } catch (err) {
             console.error(err);
