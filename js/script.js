@@ -583,7 +583,8 @@
     }
   }
 
-  const mainAppObserver = new MutationObserver(() => {
+  let mutationRaf = null;
+  const runDomTweaks = () => {
     renameDashboard();
     hideSpecificMenus();
     hideOverwriteCheckbox(); 
@@ -596,15 +597,17 @@
       resizeObserver.observe(videoElement);
       updateSubtitleFontSize(videoElement);
     }
+    mutationRaf = null;
+  };
+
+  const mainAppObserver = new MutationObserver(() => {
+    if (mutationRaf) return;
+    mutationRaf = requestAnimationFrame(runDomTweaks);
   });
 
   const initMainObserver = () => {
     mainAppObserver.observe(document.body, { childList: true, subtree: true });
-    renameDashboard();
-    hideSpecificMenus();
-    hideOverwriteCheckbox(); 
-    fixFooter();
-    checkAutoOpenDonate(); 
+    runDomTweaks();
   };
 
   if (document.body) {
