@@ -613,6 +613,17 @@
     window.addEventListener('DOMContentLoaded', initMainObserver);
   }
 
+  // Dừng pollInterval khi người dùng đổi tab hoặc rời trang để tránh interval chạy ngầm vô ích
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+  });
+  window.addEventListener('beforeunload', () => {
+    if (pollInterval) clearInterval(pollInterval);
+  });
+
   const titleElement = document.querySelector('title');
   if (titleElement) {
     const titleObserver = new MutationObserver(renameDashboard);
