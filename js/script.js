@@ -258,7 +258,17 @@
          --donate-input-bg: #f8f9fa;
          --donate-card: #ffffff;
       }
-      html.hope-ui-dark, @media (prefers-color-scheme: dark) {
+      html.hope-ui-dark {
+         --donate-bg-main: #1a202c;
+         --donate-bg-sub: #2d3748;
+         --donate-border: #4a5568;
+         --donate-text: #e2e8f0;
+         --donate-text-sub: #a0aec0;
+         --donate-muted: #a0aec0;
+         --donate-input-bg: #2d3748;
+         --donate-card: #2d3748;
+      }
+      @media (prefers-color-scheme: dark) {
          :root {
              --donate-bg-main: #1a202c;
              --donate-bg-sub: #2d3748;
@@ -347,6 +357,26 @@
         if (pollInterval) clearInterval(pollInterval);
         modal.classList.remove('active');
     });
+
+    const resetQrOnInput = () => {
+        const qrBox = document.getElementById('dynamic-qr-box');
+        const btn = document.getElementById('btn-generate-qr');
+        if (qrBox && qrBox.style.display !== 'none') {
+            qrBox.style.display = 'none';
+            if (btn) {
+                btn.style.display = 'block';
+                btn.textContent = 'Cập nhật mã QR';
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            }
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+    };
+    document.getElementById('dynamic-donor-name').addEventListener('input', resetQrOnInput);
+    document.getElementById('dynamic-donor-amount').addEventListener('input', resetQrOnInput);
 
     document.getElementById('btn-generate-qr').addEventListener('click', async function() {
         const btn = document.getElementById('btn-generate-qr');
