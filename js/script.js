@@ -2,7 +2,7 @@
   // ==========================================
   // 1. DISCLAIMER BANNER
   // ==========================================
-  const STORAGE_KEY = 'disclaimer_accepted_v1';
+  const STORAGE_KEY = 'disclaimer_accepted_v2';
   if (!localStorage.getItem(STORAGE_KEY)) {
     const banner = document.createElement('div');
     banner.id = 'site-disclaimer';
@@ -19,6 +19,10 @@
           việc sử dụng nội dung theo đúng quy định pháp luật tại quốc gia của bạn.
           Người quản trị <strong>không chịu bất kỳ trách nhiệm nào</strong> phát sinh từ hành vi sử dụng
           nội dung của người dùng, bao gồm nhưng không giới hạn ở các vi phạm bản quyền hay pháp luật liên quan.
+          <div class="disc-legal-links" style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.2); display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px;">
+            <a href="/terms" target="_blank" rel="noopener noreferrer" style="color: #1890ff; font-weight: 600; text-decoration: underline;">📜 Điều khoản sử dụng</a>
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color: #1890ff; font-weight: 600; text-decoration: underline;">🔒 Chính sách bảo vệ dữ liệu</a>
+          </div>
         </div>
       </div>
       <button class="disc-btn" id="disc-accept-btn">Đã hiểu & Đồng ý</button>
@@ -554,11 +558,31 @@
     authLink.style.textDecoration = 'none';
     authLink.style.whiteSpace = 'nowrap';    
     
+    const termsLink = document.createElement('a');
+    termsLink.href = '/terms';
+    termsLink.target = '_blank';
+    termsLink.textContent = 'Điều khoản';
+    termsLink.style.color = 'inherit';
+    termsLink.style.textDecoration = 'none';
+    termsLink.style.whiteSpace = 'nowrap';
+
+    const privacyLink = document.createElement('a');
+    privacyLink.href = '/privacy';
+    privacyLink.target = '_blank';
+    privacyLink.textContent = 'Bảo mật';
+    privacyLink.style.color = 'inherit';
+    privacyLink.style.textDecoration = 'none';
+    privacyLink.style.whiteSpace = 'nowrap';
+
     footer.appendChild(copyright);
     footer.appendChild(document.createTextNode(' | '));
     footer.appendChild(leaderboard);
     footer.appendChild(document.createTextNode(' | '));
     footer.appendChild(donate);
+    footer.appendChild(document.createTextNode(' | '));
+    footer.appendChild(termsLink);
+    footer.appendChild(document.createTextNode(' | '));
+    footer.appendChild(privacyLink);
     footer.appendChild(document.createTextNode(' | '));
     footer.appendChild(authLink);    
     
